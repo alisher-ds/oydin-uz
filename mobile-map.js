@@ -1,95 +1,39 @@
-/* Oydin Makon — touch-first mobile interaction */
+/* Oydin Makon — mobile viewport gestures */
 (() => {
-  const canvas = document.querySelector('#canvas');
-  const workspace = document.querySelector('#workspace');
-  if (!canvas || !workspace || !matchMedia('(pointer: coarse)').matches) return;
-
-  let active = null;
-  let moved = false;
-  let suppressClickUntil = 0;
-
-  const getData = id => {
-    try {
-      const maps = JSON.parse(localStorage.getItem('oydin-maps') || '{}');
-      const mapId = localStorage.getItem('oydin-active-map') || 'map-default';
-      return maps[mapId]?.cards?.find(item => String(item.id) === String(id)) || null;
-    } catch { return null; }
-  };
-
-  const getScale = () => Math.max(.5, (Number(document.querySelector('#zoom')?.textContent?.replace('%','')) || 100) / 100);
-
-  document.addEventListener('pointerdown', event => {
-    if (event.pointerType === 'mouse' || !event.isPrimary) return;
-    const card = event.target.closest?.('.thought-card');
-    if (!card || event.target.closest?.('button')) return;
-
-    const data = getData(card.dataset.id);
-    if (!data) return;
-
-    /* Capture at document level so the gesture cannot be lost when the card
-       moves away from the original finger position. */
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    active = {id:card.dataset.id,card,data,startX:event.clientX,startY:event.clientY,lastX:event.clientX,lastY:event.clientY,pointerId:event.pointerId};
-    moved = false;
-    card.classList.add('is-dragging');
-    try { card.setPointerCapture(event.pointerId); } catch {}
-  }, true);
-
-  document.addEventListener('pointermove', event => {
-    if (!active || event.pointerId !== active.pointerId) return;
-    event.preventDefault();
-
-    const scale = getScale();
-    const dx = (event.clientX - active.lastX) / scale;
-    const dy = (event.clientY - active.lastY) / scale;
-    if (Math.hypot(event.clientX-active.startX,event.clientY-active.startY) > 5) moved = true;
-
-    active.data.x = (Number(active.data.x)||0) + dx;
-    active.data.y = (Number(active.data.y)||0) + dy;
-
-    /* Do not hard-stop the card at the workspace edge. Give it breathing room
-       so the finger can keep moving naturally instead of hitting a wall. */
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    const cw = active.card.offsetWidth || 194;
-    const ch = active.card.offsetHeight || 116;
-    const minX = -Math.min(180, w*.18);
-    const maxX = w-cw+Math.min(180,w*.18);
-    const minY = -Math.min(120,h*.15);
-    const maxY = h-ch+Math.min(120,h*.15);
-    active.data.x = Math.max(minX,Math.min(maxX,active.data.x));
-    active.data.y = Math.max(minY,Math.min(maxY,active.data.y));
-
-    active.card.style.left = `${active.data.x}px`;
-    active.card.style.top = `${active.data.y}px`;
-    active.lastX = event.clientX;
-    active.lastY = event.clientY;
-
-    document.dispatchEvent(new CustomEvent('oydin-card-moved',{detail:{id:active.id}}));
-  }, {capture:true,passive:false});
-
-  const finish = event => {
-    if (!active || event.pointerId !== active.pointerId) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    active.card.classList.remove('is-dragging');
-    if (moved) {
-      suppressClickUntil = performance.now()+300;
-      try {
-        const maps = JSON.parse(localStorage.getItem('oydin-maps') || '{}');
-        const mapId = localStorage.getItem('oydin-active-map') || 'map-default';
-        const map = maps[mapId];
-        const saved = map?.cards?.find(item => String(item.id) === String(active.id));
-        if (saved) { saved.x=active.data.x; saved.y=active.data.y; map.updatedAt=new Date().toISOString(); localStorage.setItem('oydin-maps',JSON.stringify(maps)); }
-      } catch {}
+  const canvas=document.querySelector('#canvas'),workspace=document.querySelector('#workspace');
+  if(!canvas||!workspace||!matchMedia('(pointer: coarse)').matches)return;
+  const pointers=new Map();
+  let pan={x:0,y:0},pinch=null,suppressClickUntil=0;
+  const zoom=()=>Math.max(.5,(Number(document.querySelector('#zoom')?.textContent?.replace('%',''))||100)/100);
+  const transform=()=>{const s=zoom();canvas.style.transform=`translate3d(${pan.x}px,${pan.y}px,0) scale(${s})`;const l=document.querySelector('#connections');if(l)l.style.transform=`translate3d(${pan.x}px,${pan.y}px,0) scale(${s})`};
+  const dist=(a,b)=>Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+  const mid=(a,b)=>({x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2});
+  workspace.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse'||!e.isPrimary||e.target.closest('.card-actions'))return;
+    pointers.set(e.pointerId,{clientX:e.clientX,clientY:e.clientY});
+    if(e.target.closest('.thought-card'))return;
+    e.preventDefault();
+    try{workspace.setPointerCapture(e.pointerId)}catch{}
+    if(pointers.size===2){const p=[...pointers.values()];pinch={d:dist(p[0],p[1]),s:zoom(),p:{...pan},m:mid(p[0],p[1])}}
+    else workspace.__panStart={x:e.clientX-pan.x,y:e.clientY-pan.y};
+  },{passive:false});
+  workspace.addEventListener('pointermove',e=>{
+    if(!pointers.has(e.pointerId))return;
+    pointers.set(e.pointerId,{clientX:e.clientX,clientY:e.clientY});
+    if(e.target.closest('.thought-card'))return;
+    e.preventDefault();
+    if(pointers.size>=2){
+      const p=[...pointers.values()].slice(0,2);if(!pinch)pinch={d:dist(p[0],p[1]),s:zoom(),p:{...pan},m:mid(p[0],p[1])};
+      const next=Math.max(.5,Math.min(1.75,pinch.s*dist(p[0],p[1])/(pinch.d||1))),m=mid(p[0],p[1]);
+      pan.x=pinch.p.x+m.x-pinch.m.x;pan.y=pinch.p.y+m.y-pinch.m.y;
+      const z=document.querySelector('#zoom');if(z)z.textContent=Math.round(next*100)+'%';
+      canvas.style.transform=`translate3d(${pan.x}px,${pan.y}px,0) scale(${next})`;const l=document.querySelector('#connections');if(l)l.style.transform=`translate3d(${pan.x}px,${pan.y}px,0) scale(${next})`;return;
     }
-    active=null;
-  };
-
-  document.addEventListener('pointerup',finish,{capture:true,passive:false});
-  document.addEventListener('pointercancel',finish,{capture:true,passive:false});
-  document.addEventListener('click',event=>{
-    if (performance.now() < suppressClickUntil) { event.preventDefault(); event.stopImmediatePropagation(); }
-  },true);
+    if(workspace.__panStart){pan.x=e.clientX-workspace.__panStart.x;pan.y=e.clientY-workspace.__panStart.y;transform()}
+  },{passive:false});
+  const finish=e=>{if(!pointers.has(e.pointerId))return;pointers.delete(e.pointerId);if(pointers.size<2)pinch=null;if(!pointers.size){workspace.__panStart=null;suppressClickUntil=performance.now()+180}};
+  workspace.addEventListener('pointerup',finish,{passive:false});workspace.addEventListener('pointercancel',finish,{passive:false});
+  document.addEventListener('click',e=>{if(performance.now()<suppressClickUntil){e.preventDefault();e.stopImmediatePropagation()}},true);
+  ['zoomIn','zoomOut','fitMap'].forEach(id=>document.querySelector('#'+id)?.addEventListener('click',()=>requestAnimationFrame(transform)));
+  transform();
 })();
