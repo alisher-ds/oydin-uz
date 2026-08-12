@@ -1,0 +1,16 @@
+const input=document.querySelector('#ideaInput');
+const save=document.querySelector('#saveIdea');
+const list=document.querySelector('#ideas');
+const key='oydin-oqim';
+const load=()=>{try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return[]}};
+const uid=()=>crypto.randomUUID?.()||`${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let ideas=load();
+function persist(){localStorage.setItem(key,JSON.stringify(ideas));}
+function add(){const text=input.value.trim();if(!text)return;ideas.unshift({id:uid(),text,createdAt:new Date().toISOString()});input.value='';persist();render();input.focus()}
+function moveToMakon(id){const idea=ideas.find(x=>x.id===id);if(!idea)return;let maps;try{maps=JSON.parse(localStorage.getItem('oydin-maps')||'{}')}catch{maps={}};let mapId=localStorage.getItem('oydin-active-map')||'map-default';if(!maps[mapId])maps[mapId]={id:mapId,title:'Yangi makon',cards:[],connections:[],space:'paper',updatedAt:new Date().toISOString()};const map=maps[mapId];const i=map.cards.length;map.cards.push({id:uid(),text:idea.text,type:'G‘oya',x:80+(i%4)*300,y:120+(Math.floor(i/4)%5)*160,createdAt:new Date().toISOString(),detail:{status:'Ochiq'}});map.updatedAt=new Date().toISOString();localStorage.setItem('oydin-maps',JSON.stringify(maps));localStorage.setItem('oydin-active-map',mapId);ideas=ideas.filter(x=>x.id!==id);persist();render();}
+function edit(id){const idea=ideas.find(x=>x.id===id);if(!idea)return;const text=prompt('Fikrni tahrirlash:',idea.text);if(text?.trim()){idea.text=text.trim();persist();render()}}
+function remove(id){ideas=ideas.filter(x=>x.id!==id);persist();render()}
+function render(){if(!list)return;list.innerHTML=ideas.length?ideas.map(x=>`<article style="display:grid;grid-template-columns:1fr auto;gap:14px;padding:20px 4px;border-top:1px solid var(--line)"><div><p style="margin:0;font-size:16px;line-height:1.7;white-space:pre-wrap">${esc(x.text)}</p><small style="display:block;margin-top:8px;color:var(--muted);font:500 9px 'DM Mono'">${new Date(x.createdAt).toLocaleString('uz-UZ')}</small></div><div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="soft-button" data-move="${x.id}">Makon'ga</button><button class="icon-button" data-edit="${x.id}" aria-label="Tahrirlash">✎</button><button class="icon-button" data-delete="${x.id}" aria-label="O‘chirish">×</button></div></article>`).join(''):'<div style="padding:50px 4px;color:var(--muted);text-align:center">Hozircha bu yer bo‘sh.</div>';
+list.querySelectorAll('[data-move]').forEach(b=>b.onclick=()=>moveToMakon(b.dataset.move));list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>edit(b.dataset.edit));list.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>remove(b.dataset.delete));}
+save?.addEventListener('click',add);input?.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')add()});render();
