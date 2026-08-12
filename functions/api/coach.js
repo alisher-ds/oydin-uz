@@ -8,13 +8,18 @@ function clean(value, max = 700) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
 }
 
+// Safe deployment diagnostic. Never returns the API key itself.
+export async function onRequestGet({ env }) {
+  return json({ ok: true, service: 'oydin-coach', model: MODEL, secretConfigured: Boolean(env.GEMINI_API_KEY) });
+}
+
 async function ask(env, prompt, maxOutputTokens) {
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { temperature: 0.65, maxOutputTokens } })
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) { console.error('Gemini error', response.status, JSON.stringify(data).slice(0, 700)); throw new Error(`Gemini ${response.status}`); }
+  if (!response.ok) { console.error('Gemini error', response.status, JSON.stringify(data).slice(0, 1000)); throw new Error(`Gemini ${response.status}`); }
   return clean(data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join(' '));
 }
 
