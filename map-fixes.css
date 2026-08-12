@@ -1,28 +1,4 @@
-/* Oydin Makon — final text-first surface */
-.map-page .workspace{touch-action:auto;overscroll-behavior-x:contain;overscroll-behavior-y:auto;position:relative}
-.map-page .canvas,.map-page .connections{touch-action:auto;will-change:transform}
-.map-page .thought-card{width:max-content;max-width:min(270px,calc(100vw - 48px));min-height:0;padding:7px 11px 8px;border:1px solid color-mix(in srgb,var(--accent) 62%,var(--ink) 38%);border-radius:10px;background:color-mix(in srgb,var(--panel) 18%,transparent) !important;box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 10%,transparent),0 8px 24px color-mix(in srgb,var(--ink) 7%,transparent) !important;backdrop-filter:blur(2px);overflow:visible;color:var(--ink);cursor:grab;transition:opacity .16s,box-shadow .16s,border-color .16s}
-.map-page .thought-card:before,.map-page .thought-card:after{display:none !important}
-.map-page .thought-card:hover{transform:none;box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 18%,transparent),0 10px 26px color-mix(in srgb,var(--ink) 9%,transparent) !important}
-.map-page .thought-card:active{cursor:grabbing;transform:none}
-.map-page .card-type{display:none}
-.map-page .thought-card p{margin:0;max-width:245px;padding:0;font-size:15px;line-height:1.48;font-weight:650;letter-spacing:-.28px;text-wrap:pretty}
-.map-page .card-meta,.map-page .card-summary{display:none}
-.map-page .card-actions{top:-38px;left:-1px;right:auto;opacity:1;transform:none;display:flex;gap:3px;padding:3px;border:1px solid color-mix(in srgb,var(--ink) 13%,transparent);border-radius:10px;background:color-mix(in srgb,var(--panel) 90%,transparent);backdrop-filter:blur(16px);box-shadow:0 8px 22px color-mix(in srgb,var(--ink) 9%,transparent)}
-.map-page .card-actions button{width:27px;height:27px;border:0;border-radius:7px;background:transparent;color:var(--ink);font-size:12px;display:grid;place-items:center}
-.map-page .card-actions button:hover,.map-page .card-actions button:focus-visible{background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--ink);outline:none}
-.map-page .card-actions .delete:hover{background:color-mix(in srgb,#a74d45 16%,transparent);color:#9a4038}
-.map-page .thought-card.connect-source{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent) !important}
-.map-page .thought-card.connect-source p{color:var(--accent)}
-.map-page .thought-card.is-dragging{opacity:.78}
-.map-page #fitMap{min-width:66px}
-.map-page #saveStatus{display:none !important}
-.map-page .workspace-toolbar,.map-page .flow-panel,.map-page .space-hint{z-index:30}
-@media(max-width:650px){
-  .map-page .workspace{height:calc(100dvh - 270px);min-height:520px;touch-action:auto}
-  .map-page .canvas,.map-page .connections{touch-action:auto}
-  .map-page .thought-card{max-width:calc(100vw - 40px);padding:6px 9px 7px;border-radius:9px}
-  .map-page .thought-card p{font-size:14px;line-height:1.48}
-  .map-page .card-actions{top:-38px;gap:2px;padding:3px}
-  .map-page .card-actions button{width:29px;height:29px}
-}
+/* Oydin Makon — final visual layer */
+.map-page .thought-card{width:max-content;max-width:min(270px,calc(100vw - 40px));min-height:0;padding:7px 10px 8px;border:1px solid color-mix(in srgb,var(--accent) 60%,var(--ink) 40%);border-radius:10px;background:color-mix(in srgb,var(--panel) 14%,transparent)!important;box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 9%,transparent),0 7px 22px color-mix(in srgb,var(--ink) 7%,transparent)!important);backdrop-filter:blur(2px);overflow:visible;color:var(--ink);cursor:grab}
+.map-page .thought-card:before,.map-page .thought-card:after{display:none!important}.map-page .thought-card p{margin:0;max-width:250px;padding:0;font-size:15px;line-height:1.48;font-weight:650;letter-spacing:-.25px}.map-page .card-type,.map-page .card-meta,.map-page .card-summary{display:none}.map-page .card-actions{top:-38px;left:-1px;right:auto;opacity:0;visibility:hidden;pointer-events:none;display:flex;gap:3px;padding:3px;border:1px solid color-mix(in srgb,var(--ink) 13%,transparent);border-radius:10px;background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(16px);box-shadow:0 8px 22px color-mix(in srgb,var(--ink) 9%,transparent);transition:opacity .15s,visibility .15s}.map-page .thought-card:hover .card-actions,.map-page .thought-card:focus-within .card-actions,.map-page .thought-card.actions-open .card-actions{opacity:1;visibility:visible;pointer-events:auto}.map-page .card-actions button{width:27px;height:27px;border:0;border-radius:7px;background:transparent;color:var(--ink);font-size:12px;display:grid;place-items:center}.map-page .card-actions button:hover,.map-page .card-actions button:focus-visible{background:color-mix(in srgb,var(--accent) 10%,transparent);outline:none}.map-page .thought-card.connect-source{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent)!important}.map-page #saveStatus{display:none!important}.map-page .workspace-toolbar,.map-page .flow-panel,.map-page .space-hint{z-index:30}
+@media(max-width:650px){.map-page .thought-card{max-width:calc(100vw - 32px);padding:6px 9px 7px}.map-page .thought-card p{font-size:14px}.map-page .card-actions{top:-39px}.map-page .thought-card.actions-open .card-actions{opacity:1;visibility:visible;pointer-events:auto}.map-page .workspace{height:calc(100dvh - 270px);min-height:520px;touch-action:auto}.map-page .canvas,.map-page .connections{touch-action:none}.map-page .workspace-toolbar{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;z-index:40}.map-page .tool-cluster{flex-wrap:wrap}.map-page .space-hint{bottom:64px;max-width:calc(100% - 20px)}.map-page .flow-panel{bottom:10px;left:10px;right:10px;max-width:none}.map-page .map-heading{align-items:flex-start}.map-page .map-heading .map-head-actions{flex-wrap:wrap}.map-page .map-layout{grid-template-columns:1fr}.map-page .map-rail{min-height:0;display:flex;flex-direction:row;align-items:center;gap:7px;overflow-x:auto;padding:7px}.map-page .rail-button{min-width:128px;padding:9px}.map-page .rail-divider,.map-page .map-stats,.map-page .rail-theme,.map-page .rail-help{display:none}.map-page .map-app{width:calc(100vw - 16px);padding:12px 0}.map-page .map-subtitle{display:none}.map-page .title-row input{width:60vw;font-size:25px}.map-page .topbar{padding:0 12px}.map-page .map-center-nav{display:none}.map-page .outline-button{display:none}}
