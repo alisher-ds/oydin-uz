@@ -1,5 +1,4 @@
-/* Oydin — touch-first dragging for Makon.
-   Loaded after app.js so it can take over card dragging on touch devices. */
+/* Oydin Makon — touch-first mobile interaction */
 (() => {
   const canvas = document.querySelector('#canvas');
   const workspace = document.querySelector('#workspace');
@@ -7,79 +6,90 @@
 
   let active = null;
   let moved = false;
+  let suppressClickUntil = 0;
 
-  document.addEventListener('pointerdown', (event) => {
-    const card = event.target.closest('.thought-card');
-    if (!card || event.target.closest('button')) return;
+  const getData = id => {
+    try {
+      const maps = JSON.parse(localStorage.getItem('oydin-maps') || '{}');
+      const mapId = localStorage.getItem('oydin-active-map') || 'map-default';
+      return maps[mapId]?.cards?.find(item => String(item.id) === String(id)) || null;
+    } catch { return null; }
+  };
 
-    const id = card.dataset.id;
-    const cards = (() => {
-      try {
-        const maps = JSON.parse(localStorage.getItem('oydin-maps') || '{}');
-        const mapId = localStorage.getItem('oydin-active-map') || 'map-default';
-        return maps[mapId]?.cards || [];
-      } catch { return []; }
-    })();
-    const data = cards.find(item => String(item.id) === String(id));
+  const getScale = () => Math.max(.5, (Number(document.querySelector('#zoom')?.textContent?.replace('%','')) || 100) / 100);
+
+  document.addEventListener('pointerdown', event => {
+    if (event.pointerType === 'mouse' || !event.isPrimary) return;
+    const card = event.target.closest?.('.thought-card');
+    if (!card || event.target.closest?.('button')) return;
+
+    const data = getData(card.dataset.id);
     if (!data) return;
 
+    /* Capture at document level so the gesture cannot be lost when the card
+       moves away from the original finger position. */
     event.preventDefault();
     event.stopImmediatePropagation();
-    active = {
-      id,
-      data,
-      startX: event.clientX,
-      startY: event.clientY,
-      originX: Number(data.x) || 0,
-      originY: Number(data.y) || 0,
-      pointerId: event.pointerId
-    };
+    active = {id:card.dataset.id,card,data,startX:event.clientX,startY:event.clientY,lastX:event.clientX,lastY:event.clientY,pointerId:event.pointerId};
     moved = false;
     card.classList.add('is-dragging');
     try { card.setPointerCapture(event.pointerId); } catch {}
   }, true);
 
-  document.addEventListener('pointermove', (event) => {
+  document.addEventListener('pointermove', event => {
     if (!active || event.pointerId !== active.pointerId) return;
     event.preventDefault();
-    const scale = Math.max(.5, (Number(document.querySelector('#zoom')?.textContent?.replace('%','')) || 100) / 100);
-    const dx = (event.clientX - active.startX) / scale;
-    const dy = (event.clientY - active.startY) / scale;
-    if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
 
-    const card = canvas.querySelector(`[data-id="${CSS.escape(String(active.id))}"]`);
-    if (!card) return;
-    const maxX = Math.max(20, canvas.clientWidth - card.offsetWidth - 20);
-    const maxY = Math.max(90, canvas.clientHeight - card.offsetHeight - 70);
-    active.data.x = Math.max(20, Math.min(maxX, active.originX + dx));
-    active.data.y = Math.max(90, Math.min(maxY, active.originY + dy));
-    card.style.left = `${active.data.x}px`;
-    card.style.top = `${active.data.y}px`;
-  }, {passive:false});
+    const scale = getScale();
+    const dx = (event.clientX - active.lastX) / scale;
+    const dy = (event.clientY - active.lastY) / scale;
+    if (Math.hypot(event.clientX-active.startX,event.clientY-active.startY) > 5) moved = true;
 
-  const finish = (event) => {
+    active.data.x = (Number(active.data.x)||0) + dx;
+    active.data.y = (Number(active.data.y)||0) + dy;
+
+    /* Do not hard-stop the card at the workspace edge. Give it breathing room
+       so the finger can keep moving naturally instead of hitting a wall. */
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    const cw = active.card.offsetWidth || 194;
+    const ch = active.card.offsetHeight || 116;
+    const minX = -Math.min(180, w*.18);
+    const maxX = w-cw+Math.min(180,w*.18);
+    const minY = -Math.min(120,h*.15);
+    const maxY = h-ch+Math.min(120,h*.15);
+    active.data.x = Math.max(minX,Math.min(maxX,active.data.x));
+    active.data.y = Math.max(minY,Math.min(maxY,active.data.y));
+
+    active.card.style.left = `${active.data.x}px`;
+    active.card.style.top = `${active.data.y}px`;
+    active.lastX = event.clientX;
+    active.lastY = event.clientY;
+
+    document.dispatchEvent(new CustomEvent('oydin-card-moved',{detail:{id:active.id}}));
+  }, {capture:true,passive:false});
+
+  const finish = event => {
     if (!active || event.pointerId !== active.pointerId) return;
-    const card = canvas.querySelector(`[data-id="${CSS.escape(String(active.id))}"]`);
-    if (card) card.classList.remove('is-dragging');
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    active.card.classList.remove('is-dragging');
     if (moved) {
+      suppressClickUntil = performance.now()+300;
       try {
         const maps = JSON.parse(localStorage.getItem('oydin-maps') || '{}');
         const mapId = localStorage.getItem('oydin-active-map') || 'map-default';
-        if (maps[mapId]) {
-          const saved = maps[mapId].cards?.find(item => String(item.id) === String(active.id));
-          if (saved) {
-            saved.x = active.data.x;
-            saved.y = active.data.y;
-            maps[mapId].updatedAt = new Date().toISOString();
-            localStorage.setItem('oydin-maps', JSON.stringify(maps));
-          }
-        }
+        const map = maps[mapId];
+        const saved = map?.cards?.find(item => String(item.id) === String(active.id));
+        if (saved) { saved.x=active.data.x; saved.y=active.data.y; map.updatedAt=new Date().toISOString(); localStorage.setItem('oydin-maps',JSON.stringify(maps)); }
       } catch {}
-      document.dispatchEvent(new CustomEvent('oydin-card-moved', {detail:{id:active.id}}));
     }
-    active = null;
+    active=null;
   };
 
-  document.addEventListener('pointerup', finish, true);
-  document.addEventListener('pointercancel', finish, true);
+  document.addEventListener('pointerup',finish,{capture:true,passive:false});
+  document.addEventListener('pointercancel',finish,{capture:true,passive:false});
+  document.addEventListener('click',event=>{
+    if (performance.now() < suppressClickUntil) { event.preventDefault(); event.stopImmediatePropagation(); }
+  },true);
 })();
