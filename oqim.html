@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta name="theme-color" content="#f6f2ea"><meta name="description" content="Oqim — Oydinda fikrlarni tez yozib saqlash uchun joy.">
-<title>Oydin — Oqim</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="map-fixes.css">
+<title>Oydin — Oqim</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="map-fixes.css"><link rel="stylesheet" href="oqim.css">
 </head>
-<body>
+<body class="oqim-page">
 <div class="site-shell"><header class="topbar landing-bar">
 <a class="brand" href="index.html" aria-label="Oydin bosh sahifa"><span class="brand-symbol" aria-hidden="true"><svg viewBox="0 0 44 44"><path d="M22 4C12 4 6 11.2 6 21.9 6 32.6 12.1 40 22 40s16-7.4 16-18.1C38 11.2 32 4 22 4Z"/><path d="M22 11.5c-5.3 0-8.5 4-8.5 10.4S16.7 32.5 22 32.5s8.5-4.2 8.5-10.6S27.3 11.5 22 11.5Z"/><path d="M22 17.2c-2.2 0-3.5 1.8-3.5 4.8s1.3 4.8 3.5 4.8 3.5-1.8 3.5-4.8-1.3-4.8-3.5-4.8Z"/></svg></span><span class="brand-word">oydin</span></a>
 <nav class="topnav"><a class="topnav-link" href="index.html">Oydin</a><a class="topnav-link active" href="oqim.html">Oqim</a><a class="topnav-link" href="map.html">Makon</a></nav>
@@ -15,10 +15,10 @@
 <section>
 <p class="kicker">FIKRLAR OQIMI</p><h1 style="font-size:clamp(42px,7vw,78px);margin:0 0 14px">O‘ylaganingizni<br><span>yozib qo‘ying.</span></h1>
 <p class="hero-lede" style="max-width:650px">Bu yerda fikrlar shunchaki saqlanadi. Ularni Makonga faqat xohlaganingizda olib o‘tasiz.</p>
-<div style="margin-top:38px;padding:24px;border:1px solid var(--line,#d8d1c5);border-radius:20px;background:var(--surface,#fff)">
-<textarea id="ideaInput" maxlength="1000" placeholder="Hozir nimani o‘ylayapsiz?" style="width:100%;min-height:130px;border:0;outline:0;resize:vertical;background:transparent;color:inherit;font:inherit;font-size:18px"></textarea>
+<div class="oqim-capture" style="margin-top:38px;padding:24px;border:1px solid var(--line,#d8d1c5);border-radius:20px;background:var(--surface,#fff)">
+<textarea id="ideaInput" maxlength="1000" placeholder="Hozir nimani o‘ylayapsiz?" aria-label="Yangi fikr"></textarea><span class="oqim-count" id="ideaCount">0 / 1000</span>
 <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="primary-button compact" id="saveIdea" type="button">Saqlash <span>→</span></button></div></div>
-<div id="ideas" style="margin-top:30px"></div>
+<div id="ideas" aria-live="polite"></div>
 </section></main></div>
 <script src="app.js" type="module"></script><script src="oqim.js" type="module"></script>
 </body></html>
