@@ -4,7 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#101b2f" />
+    <meta name="description" content="Oydin — fikrlaringizni xaritaga tushiring, ular orasidagi signalni toping va keyingi tiniq qadamni aniqlang." />
+    <meta name="robots" content="index,follow" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Oydin — fikrlaringizga joy bering" />
+    <meta property="og:description" content="Fikrlaringizga joy bering. Oydin ular orasidagi signalni topishga yordam beradi." />
+    <meta name="twitter:card" content="summary" />
     <title>Oydin — fikrlaringizga joy bering</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -13,8 +20,8 @@
         <a class="brand" href="#"><span class="brand-mark">o</span> oydin</a>
         <button class="new-map" id="newMap">+ Yangi xarita</button>
         <nav aria-label="Xarita bo‘limlari">
-          <button class="nav-item active"><span>✦</span> Bugungi fikrlar</button>
-          <button class="nav-item" id="openMinute"><span>◌</span> Bir daqiqa</button>
+          <button class="nav-item active" type="button"><span>✦</span> Bugungi fikrlar</button>
+          <button class="nav-item" id="openMinute" type="button"><span>◌</span> Bir daqiqa</button>
         </nav>
         <div class="sidebar-bottom">
           <p>Fikrlaringiz faqat shu qurilmada saqlanadi.</p>
@@ -29,9 +36,9 @@
             <input id="mapTitle" value="Bugungi fikrlar" aria-label="Xarita nomi" />
           </div>
           <div class="header-actions">
-            <button class="theme-toggle" id="themeToggle" aria-label="Tungi rejimni yoqish"><span class="sun">☼</span><span class="moon">☾</span></button>
-            <span class="save-status" id="saveStatus">Saqlangan</span>
-            <button class="icon-button" id="help" aria-label="Yordam">?</button>
+            <button class="theme-toggle" id="themeToggle" type="button" aria-label="Tungi rejimni yoqish"><span class="sun">☼</span><span class="moon">☾</span></button>
+            <span class="save-status" id="saveStatus" role="status">Saqlangan</span>
+            <button class="icon-button" id="help" type="button" aria-label="Yordam">?</button>
           </div>
         </header>
 
@@ -41,15 +48,16 @@
             <h1>Fikrlaringizga <em>joy</em> bering.</h1>
             <p>Hammasini yozing. Oydin fikrlaringiz orasidagi eng muhim keyingi qadamni topishga yordam beradi.</p>
           </div>
-          <div class="hero-actions"><button class="primary" id="addFirst">Fikrni tashlash <span>→</span></button><button class="ghost" id="openMinuteHero">◌ Bir daqiqa</button><button class="ghost" id="spark">✦ Menga savol ber</button></div>
+          <div class="hero-actions"><button class="primary" id="addFirst" type="button">Fikrni tashlash <span>→</span></button><button class="ghost" id="openMinuteHero" type="button">◌ Bir daqiqa</button><button class="ghost" id="spark" type="button">✦ Menga savol ber</button></div>
         </section>
 
         <section class="workspace" aria-label="Fikrlar xaritasi">
           <div class="canvas-toolbar">
             <span id="count">0 ta fikr</span>
-            <div><button id="zoomOut" aria-label="Kichraytirish">−</button><span id="zoom">100%</span><button id="zoomIn" aria-label="Kattalashtirish">+</button></div>
+            <div><button id="zoomOut" type="button" aria-label="Kichraytirish">−</button><span id="zoom">100%</span><button id="zoomIn" type="button" aria-label="Kattalashtirish">+</button></div>
           </div>
-          <div class="flow-bar" id="flowBar"><span class="flow-icon">✦</span><span id="flowText">Bitta fikr yozing — Oydin siz uchun signalni topadi.</span><button id="findStep" disabled>Keyingi qadamni topish →</button></div>
+          <svg class="connections" id="connections" aria-hidden="true"></svg>
+          <div class="flow-bar" id="flowBar"><span class="flow-icon">✦</span><span id="flowText">Bitta fikr yozing — Oydin siz uchun signalni topadi.</span><button id="findStep" type="button" disabled>Keyingi qadamni topish →</button></div>
           <div class="canvas" id="canvas">
             <div class="empty-state" id="emptyState">
               <span class="empty-orbit"></span>
@@ -57,14 +65,14 @@
               <p>Bir narsani yozing. Mukammal jumla shart emas.</p>
             </div>
           </div>
-          <button class="floating-add" id="addCard">+ Fikr qo‘shish</button>
+          <button class="floating-add" id="addCard" type="button">+ Fikr qo‘shish</button>
         </section>
       </main>
     </div>
 
     <dialog id="cardDialog">
       <form method="dialog" id="cardForm">
-        <div class="dialog-heading"><div><p class="eyebrow">YANGI FIKR</p><h2>Boshingizdagi narsani yozing.</h2></div><button value="cancel" class="close" aria-label="Yopish">×</button></div>
+        <div class="dialog-heading"><div><p class="eyebrow">YANGI FIKR</p><h2>Boshingizdagi narsani yozing.</h2></div><button value="cancel" class="close" type="submit" aria-label="Yopish">×</button></div>
         <div class="prompt-chip" id="promptChip">Bugun boshingizda eng ko‘p aylanayotgan narsa nima?</div>
         <textarea id="thoughtText" placeholder="Mukammal yozish shart emas. Shunchaki boshlang…" required maxlength="180"></textarea>
         <div class="type-picker" aria-label="Fikr turi">
@@ -76,8 +84,8 @@
         <button class="primary submit" value="default">Xaritaga qo‘shish <span>→</span></button>
       </form>
     </dialog>
-    <dialog id="helpDialog"><div class="help-content"><button class="close" id="closeHelp">×</button><p class="eyebrow">OYDIN QANDAY ISHLAYDI?</p><h2>Juda oddiy.</h2><p>Fikr qo‘shing, kartalarni ko‘chiring va yonidagi nuqtadan boshqa karta tomon tortib, ular orasida bog‘lanish yarating.</p></div></dialog>
-    <dialog id="minuteDialog" class="minute-dialog"><button class="minute-close" id="closeMinute" aria-label="Oydinga qaytish">← Oydinga qaytish</button><iframe src="birdaqiqa/index.html" title="Bir daqiqa"></iframe></dialog>
-    <script src="app.js"></script>
+    <dialog id="helpDialog"><div class="help-content"><button class="close" id="closeHelp" type="button" aria-label="Yopish">×</button><p class="eyebrow">OYDIN QANDAY ISHLAYDI?</p><h2>Juda oddiy.</h2><p>Fikr qo‘shing, kartalarni ko‘chiring. Karta ustidagi ↗ tugmasini bosib, boshqa karta tanlasangiz, ular orasida bog‘lanish yaratiladi.</p></div></dialog>
+    <dialog id="minuteDialog" class="minute-dialog"><button class="minute-close" id="closeMinute" type="button" aria-label="Oydinga qaytish">← Oydinga qaytish</button><iframe src="birdaqiqa/index.html" title="Bir daqiqa"></iframe></dialog>
+    <script src="app.js" type="module"></script>
   </body>
 </html>
