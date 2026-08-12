@@ -1,0 +1,8 @@
+name = "oydin"
+compatibility_date = "2026-08-13"
+
+[[d1_databases]]
+binding = "OYDIN_DB"
+database_name = "oydin"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+migrations_dir = "migrations"
