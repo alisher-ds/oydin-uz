@@ -1,41 +1,18 @@
 <!doctype html>
 <html lang="uz">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#101b2f" />
-    <meta name="description" content="Oydin — fikrlaringizni xaritaga tushiring, ular orasidagi signalni toping va keyingi tiniq qadamni aniqlang." />
-    <meta name="robots" content="index,follow" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Oydin — fikrlaringizga joy bering" />
-    <meta property="og:description" content="Fikrlaringizga joy bering. Oydin fikringizni savollar orqali aniqlashtirib, keyingi tiniq qadamni topishga yordam beradi." />
-    <meta name="twitter:card" content="summary" />
-    <title>Oydin — fikrlaringizga joy bering</title>
-    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="enhancements.css" />
-  </head>
-  <body>
-    <div class="app-shell">
-      <aside class="sidebar">
-        <a class="brand" href="#"><span class="brand-mark">o</span> oydin</a>
-        <button class="new-map" id="newMap" type="button">+ Yangi xarita</button>
-        <nav aria-label="Xarita bo‘limlari">
-          <button class="nav-item active" type="button"><span>✦</span> Bugungi fikrlar</button>
-          <button class="nav-item" id="openMinute" type="button"><span>◌</span> Bir daqiqa</button>
-        </nav>
-        <div class="sidebar-bottom"><p>Fikrlaringiz faqat shu qurilmada saqlanadi.</p><span class="local-badge">● Lokal saqlash yoqilgan</span></div>
-      </aside>
-      <main>
-        <header><div><p class="eyebrow">SHAXSIY XARITA</p><input id="mapTitle" value="Bugungi fikrlar" aria-label="Xarita nomi" /></div><div class="header-actions"><button class="theme-toggle" id="themeToggle" type="button" aria-label="Tungi rejimni yoqish"><span class="sun">☼</span><span class="moon">☾</span></button><span class="save-status" id="saveStatus" role="status">Saqlangan</span><button class="icon-button" id="help" type="button" aria-label="Yordam">?</button></div></header>
-        <section class="intro" id="intro"><div><p class="eyebrow">BOSHINGIZ BANDMI?</p><h1>Fikrlaringizga <em>joy</em> bering.</h1><p>Hammasini yozing. Oydin fikrlaringiz orasidagi eng muhim keyingi qadamni topishga yordam beradi.</p></div><div class="hero-actions"><button class="primary" id="addFirst" type="button">Fikrni tashlash <span>→</span></button><button class="ghost" id="openMinuteHero" type="button">◌ Bir daqiqa</button><button class="ghost" id="spark" type="button">✦ Menga savol ber</button></div></section>
-        <section class="workspace" aria-label="Fikrlar xaritasi"><div class="canvas-toolbar"><span id="count">0 ta fikr</span><div><button id="zoomOut" type="button" aria-label="Kichraytirish">−</button><span id="zoom">100%</span><button id="zoomIn" type="button" aria-label="Kattalashtirish">+</button></div></div><svg class="connections" id="connections" aria-hidden="true"></svg><div class="flow-bar" id="flowBar"><span class="flow-icon">✦</span><span id="flowText">Bitta fikr yozing — Oydin siz uchun signalni topadi.</span><button id="findStep" type="button" disabled>Keyingi qadamni topish →</button></div><div class="canvas" id="canvas"><div class="empty-state" id="emptyState"><span class="empty-orbit"></span><strong>Bu yer hali sokin.</strong><p>Bir narsani yozing. Mukammal jumla shart emas.</p></div></div><button class="floating-add" id="addCard" type="button">+ Fikr qo‘shish</button></section>
-      </main>
-    </div>
-    <dialog id="cardDialog"><form method="dialog" id="cardForm"><div class="dialog-heading"><div><p class="eyebrow">YANGI FIKR</p><h2>Boshingizdagi narsani yozing.</h2></div><button value="cancel" class="close" id="closeCard" type="button" aria-label="Yopish">×</button></div><div class="prompt-chip" id="promptChip">Bugun boshingizda eng ko‘p aylanayotgan narsa nima?</div><textarea id="thoughtText" placeholder="Mukammal yozish shart emas. Shunchaki boshlang…" required maxlength="180"></textarea><div class="type-picker" aria-label="Fikr turi"><button type="button" class="type selected" data-type="G‘oya">✦ G‘oya</button><button type="button" class="type" data-type="Vazifa">✓ Vazifa</button><button type="button" class="type" data-type="Savol">? Savol</button><button type="button" class="type" data-type="Xavotir">~ Xavotir</button></div><button class="primary submit" value="default">Xaritaga qo‘shish <span>→</span></button></form></dialog>
-    <dialog id="coachDialog"><form id="coachForm"><div class="coach-head"><div><p class="eyebrow">OYDIN BILAN SUHBAT</p><div class="coach-progress"><span id="coachProgress">1 / 4</span><span class="coach-dots" id="coachDots"></span></div></div><button class="close" id="closeCoach" type="button" aria-label="Suhbatni yopish">×</button></div><h2 id="coachQuestion">Hozir sizni eng ko‘p o‘ylantirayotgan narsa nima?</h2><p class="coach-hint" id="coachHint">Birinchi javobingizni erkin yozing. Chiroyli jumla shart emas.</p><textarea id="coachAnswer" maxlength="240" required placeholder="Shu yerga yozing…"></textarea><div class="coach-footer"><span id="coachLabel">1-savol</span><button class="primary submit" id="coachNext" type="submit">Davom etish <span>→</span></button></div></form></dialog>
-    <dialog id="helpDialog"><div class="help-content"><button class="close" id="closeHelp" type="button" aria-label="Yopish">×</button><p class="eyebrow">OYDIN QANDAY ISHLAYDI?</p><h2>Juda oddiy.</h2><p>Fikr qo‘shing, kartalarni ko‘chiring. Karta ustidagi ↗ tugmasini bosib, boshqa karta tanlasangiz, ular orasida bog‘lanish yaratiladi.</p></div></dialog>
-    <dialog id="minuteDialog" class="minute-dialog"><button class="minute-close" id="closeMinute" type="button" aria-label="Oydinga qaytish">← Oydinga qaytish</button><iframe src="birdaqiqa/index.html" title="Bir daqiqa"></iframe></dialog>
-    <script src="app.js" type="module"></script>
-  </body>
-</html>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101b2f"><meta name="description" content="Oydin — fikrlaringizni yaxshiroq tushunish, bog‘lash va amaliy qadamga aylantirish uchun AI hamroh."><meta name="robots" content="index,follow"><title>Oydin — fikrlaringizga aniqlik</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="enhancements.css">
+</head>
+<body>
+<div class="app-shell">
+<aside class="sidebar"><a class="brand" href="#"><span class="brand-mark">o</span> oydin</a><button class="new-map" id="newMap" type="button">+ Yangi suhbat</button><nav><button class="nav-item active" type="button"><span>✦</span> Oydin bilan suhbat</button><button class="nav-item" id="openMinute" type="button"><span>◌</span> Bir daqiqa</button></nav><div class="sidebar-bottom"><p>Oydin fikrlaringizni tinglaydi va ularni mantiqiy oqimga aylantiradi.</p><span class="local-badge">● Lokal ma’lumotlar</span></div></aside>
+<main>
+<header><div><p class="eyebrow">OYDIN AI</p><input id="mapTitle" value="Bugungi suhbat" aria-label="Suhbat nomi"></div><div class="header-actions"><button class="theme-toggle" id="themeToggle" type="button" aria-label="Tungi rejim">☼ ☾</button><span class="save-status" id="saveStatus">Saqlangan</span><button class="icon-button" id="help" type="button">?</button></div></header>
+<section class="intro"><div><p class="eyebrow">FIKRLASH UCHUN JOY</p><h1>Oydin bilan <em>gaplashing.</em></h1><p>Fikringizni qanday bo‘lsa, shunday yozing. Oydin avval tinglaydi, keyin kerak bo‘lsa fikringizni chuqurlashtiradi, bog‘laydi va amaliy qadamga aylantiradi.</p></div><div class="hero-actions"><button class="primary" id="startChat" type="button">Suhbatni boshlash <span>→</span></button><button class="ghost" id="openMinuteHero" type="button">◌ Bir daqiqa</button></div></section>
+<section class="chat-shell"><div class="chat-top"><span id="chatState">● Oydin online</span><button id="showFlow" type="button">🗺 Fikrlar oqimi</button></div><div class="chat-messages" id="chatMessages"><div class="welcome"><div class="welcome-mark">o</div><h2>Men Oydinman.</h2><p>Bugun nimani o‘ylayapsiz? Mukammal yozish shart emas. Fikringizni qanday bo‘lsa, shunday ayting.</p><div class="starter-chips"><button type="button" data-starter="Bir fikrim bor, lekin uni qanday rivojlantirishni bilmayapman.">💡 Bir fikrim bor...</button><button type="button" data-starter="Bugun boshimda juda ko‘p narsa bor, tartiblab olishim kerak.">🧠 Fikrlarim chalkash...</button><button type="button" data-starter="Bir muhim qaror oldidaman va uni yaxshiroq o‘ylab chiqmoqchiman.">⚖️ Qaror haqida o‘ylayapman...</button></div></div></div><form class="chat-input" id="chatForm"><textarea id="chatInput" rows="1" maxlength="1800" placeholder="Oydinga ayting…" required></textarea><button type="submit" aria-label="Yuborish">↑</button></form></section>
+<section class="workspace hidden" id="flowWorkspace" aria-label="Fikrlar oqimi"><div class="canvas-toolbar"><span id="count">0 ta fikr</span><div><button id="zoomOut" type="button">−</button><span id="zoom">100%</span><button id="zoomIn" type="button">+</button></div></div><svg class="connections" id="connections"></svg><div class="flow-bar" id="flowBar"><span class="flow-icon">✦</span><span id="flowText">Suhbat davomida Oydin muhim fikrlarni ajratadi.</span><button id="findStep" type="button">Keyingi qadam →</button></div><div class="canvas" id="canvas"><div class="empty-state" id="emptyState"><span class="empty-orbit"></span><strong>Fikrlar oqimi hali bo‘sh.</strong><p>Suhbatni davom ettiring — Oydin muhim bog‘lanishlarni shu yerda ko‘rsatadi.</p></div></div></section>
+</main></div>
+<dialog id="minuteDialog" class="minute-dialog"><button class="minute-close" id="closeMinute" type="button">← Oydinga qaytish</button><iframe src="birdaqiqa/index.html" title="Bir daqiqa"></iframe></dialog>
+<dialog id="helpDialog"><div class="help-content"><button class="close" id="closeHelp" type="button">×</button><p class="eyebrow">OYDIN</p><h2>Fikrni qanday yaxshilaydi?</h2><p>Oydin sizni oldindan belgilangan savollar bilan majburlamaydi. U suhbatni tushunadi, kerakli joyda savol beradi, muhim fikrlarni eslab bog‘laydi va suhbat oxirida ularni mantiqiy oqimga aylantiradi.</p></div></dialog>
+<script src="app.js" type="module"></script>
+</body></html>
