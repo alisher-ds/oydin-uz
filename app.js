@@ -55,7 +55,8 @@ function drag(el,card,startEvent){
   const up=()=>{el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',up);save()};el.addEventListener('pointermove',move);el.addEventListener('pointerup',up,{once:true})
 }
 function open(){dialog.showModal();setTimeout(()=>$('#thoughtText').focus(),80)}
-$('#addCard').onclick=open;$('#addFirst').onclick=open;$('#spark').onclick=()=>{const p=prompts[Math.floor(Math.random()*prompts.length)];$('#promptChip').textContent=p;open()};
+$('#addCard').onclick=open;$('#addFirst').onclick=open;$('#closeCard').onclick=()=>dialog.close();
+$('#spark').onclick=()=>{const p=prompts[Math.floor(Math.random()*prompts.length)];$('#promptChip').textContent=p;open()};
 $('#findStep').onclick=async()=>{$('#findStep').disabled=true;$('#flowText').textContent='Fikrlar orasidagi bog‘liqlikni tahlil qilyapmiz…';const result=await insight();$('#flowText').textContent=result;$('#flowBar').style.borderColor='#f16e59';$('#findStep').disabled=!cards.length};
 $('#themeToggle').onclick=()=>{const night=document.body.classList.toggle('night');localStorage.setItem('oydin-theme',night?'night':'light');$('#themeToggle').setAttribute('aria-label',night?'Kunduzgi rejimni yoqish':'Tungi rejimni yoqish')};if(localStorage.getItem('oydin-theme')==='night')document.body.classList.add('night');
 $('#newMap').onclick=()=>{if(confirm('Yangi xarita boshlansinmi? Hozirgi kartalar va bog‘lanishlar o‘chadi.')){cards=[];connections=[];connectingFrom=null;$('#mapTitle').value='Yangi xarita';save();render()}};
