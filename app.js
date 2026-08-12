@@ -2,61 +2,28 @@ const $=s=>document.querySelector(s);
 const canvas=$('#canvas'),dialog=$('#cardDialog'),connectionsLayer=$('#connections');
 let type='G‘oya',zoom=100,connectingFrom=null;
 const prompts=['Bugun boshingizda eng ko‘p aylanayotgan narsa nima?','Qaysi kichik narsa sizdan energiya olyapti?','Agar bitta narsani aniq qilsangiz, qaysi biri yengillashadi?','Hozir aytmay yurgan savolingiz nima?'];
+const coach={active:false,step:0,answers:[],questions:[]};
 let cards=load('oydin-cards',[]),connections=load('oydin-connections',[]);
 function load(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch{return fallback}}
 function safe(t){return t.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function category(t){return ({'G‘oya':'idea','Vazifa':'task','Savol':'question','Xavotir':'worry'})[t]||'idea'}
 function save(){try{localStorage.setItem('oydin-cards',JSON.stringify(cards));localStorage.setItem('oydin-connections',JSON.stringify(connections));localStorage.setItem('oydin-title',$('#mapTitle').value);$('#saveStatus').textContent='Saqlangan'}catch{$('#saveStatus').textContent='Saqlash imkonsiz'}}
 function insightFallback(){const tasks=cards.filter(c=>c.type==='Vazifa'),ideas=cards.filter(c=>c.type==='G‘oya');if(tasks.length)return `Keyingi tiniq qadam: “${tasks[0].text}”`;if(ideas.length)return `Signal topildi: “${ideas[0].text}” g‘oyasini bitta juda kichik qadamga aylantiring.`;return 'Bitta fikrni Vazifa yoki G‘oya deb belgilang — Oydin yo‘nalish beradi.'}
-async function insight(){
-  if(!cards.length)return insightFallback();
-  try{
-    const {getEmbedder,embedTexts,centralityScores}=await import('./embed.js');
-    const extractor=await getEmbedder();
-    const vectors=await embedTexts(extractor,cards.map(c=>c.text));
-    const scores=centralityScores(vectors),order=scores.map((s,i)=>i).sort((a,b)=>scores[b]-scores[a]);
-    const bestTask=order.find(i=>cards[i].type==='Vazifa'),bestIdea=order.find(i=>cards[i].type==='G‘oya');
-    if(bestTask!==undefined)return `Keyingi tiniq qadam: “${cards[bestTask].text}” — bu fikringiz boshqalar bilan eng ko‘p bog‘langan.`;
-    if(bestIdea!==undefined)return `Signal topildi: “${cards[bestIdea].text}” — boshqa fikrlaringiz shu g‘oya atrofida aylanyapti.`;
-    return `Eng markaziy fikringiz: “${cards[order[0]].text}”`;
-  }catch(err){console.error('Semantik tahlil ishlamadi:',err);return insightFallback()}
-}
+async function insight(){if(!cards.length)return insightFallback();try{const {getEmbedder,embedTexts,centralityScores}=await import('./embed.js');const extractor=await getEmbedder();const vectors=await embedTexts(extractor,cards.map(c=>c.text));const scores=centralityScores(vectors),order=scores.map((s,i)=>i).sort((a,b)=>scores[b]-scores[a]);const bestTask=order.find(i=>cards[i].type==='Vazifa'),bestIdea=order.find(i=>cards[i].type==='G‘oya');if(bestTask!==undefined)return `Keyingi tiniq qadam: “${cards[bestTask].text}” — bu fikringiz boshqalar bilan eng ko‘p bog‘langan.`;if(bestIdea!==undefined)return `Signal topildi: “${cards[bestIdea].text}” — boshqa fikrlaringiz shu g‘oya atrofida aylanyapti.`;return `Eng markaziy fikringiz: “${cards[order[0]].text}”`}catch(err){console.error('Semantik tahlil ishlamadi:',err);return insightFallback()}}
 function cardCenter(card){const el=canvas.querySelector(`[data-id="${card.id}"]`);return el?{x:card.x+el.offsetWidth/2,y:card.y+el.offsetHeight/2}:{x:card.x+102.5,y:card.y+57}}
-function drawConnections(){
-  if(!connectionsLayer)return;
-  connectionsLayer.setAttribute('viewBox',`0 0 ${canvas.clientWidth} ${canvas.clientHeight}`);
-  connectionsLayer.innerHTML='';
-  connections.forEach(edge=>{
-    const a=cards.find(c=>c.id===edge.from),b=cards.find(c=>c.id===edge.to);if(!a||!b)return;
-    const p1=cardCenter(a),p2=cardCenter(b),dx=p2.x-p1.x,curve=Math.max(35,Math.abs(dx)*.35);
-    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d',`M ${p1.x} ${p1.y} C ${p1.x+curve} ${p1.y}, ${p2.x-curve} ${p2.y}, ${p2.x} ${p2.y}`);
-    path.setAttribute('class','connection-line');connectionsLayer.append(path);
-  });
-}
+function drawConnections(){if(!connectionsLayer)return;connectionsLayer.setAttribute('viewBox',`0 0 ${canvas.clientWidth} ${canvas.clientHeight}`);connectionsLayer.innerHTML='';connections.forEach(edge=>{const a=cards.find(c=>c.id===edge.from),b=cards.find(c=>c.id===edge.to);if(!a||!b)return;const p1=cardCenter(a),p2=cardCenter(b),dx=p2.x-p1.x,curve=Math.max(35,Math.abs(dx)*.35);const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',`M ${p1.x} ${p1.y} C ${p1.x+curve} ${p1.y}, ${p2.x-curve} ${p2.y}, ${p2.x} ${p2.y}`);path.setAttribute('class','connection-line');connectionsLayer.append(path)})}
 function connect(from,to){if(from===to||connections.some(e=>(e.from===from&&e.to===to)||(e.from===to&&e.to===from)))return;connections.push({from,to});connectingFrom=null;save();render()}
-function render(){
-  canvas.querySelectorAll('.thought-card').forEach(x=>x.remove());
-  $('#emptyState').style.display=cards.length?'none':'block';$('#count').textContent=`${cards.length} ta fikr`;
-  $('#findStep').disabled=!cards.length;$('#flowText').textContent=connectingFrom?'Bog‘lanish uchun boshqa fikrni bosing.':cards.length?`${cards.length} fikr orasidan yo‘nalishni ajrating.`:'Bitta fikr yozing — Oydin siz uchun signalni topadi.';
-  cards.forEach(card=>{
-    const el=document.createElement('article');el.className=`thought-card ${category(card.type)}${connectingFrom===card.id?' connect-source':''}`;el.style.left=card.x+'px';el.style.top=card.y+'px';el.dataset.id=card.id;
-    el.innerHTML=`<button class="delete" title="O‘chirish" type="button" aria-label="Fikrni o‘chirish">×</button><button class="link-card" title="Boshqa fikr bilan bog‘lash" type="button" aria-label="Fikrni bog‘lash">↗</button><span class="card-type">${safe(card.type).toUpperCase()}</span><p>${safe(card.text)}</p>`;
-    canvas.append(el);
-    el.querySelector('.delete').onclick=e=>{e.stopPropagation();cards=cards.filter(c=>c.id!==card.id);connections=connections.filter(x=>x.from!==card.id&&x.to!==card.id);if(connectingFrom===card.id)connectingFrom=null;save();render()};
-    el.querySelector('.link-card').onclick=e=>{e.stopPropagation();connectingFrom=card.id;render()};
-    el.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;if(connectingFrom&&connectingFrom!==card.id){e.preventDefault();connect(connectingFrom,card.id);return}drag(el,card,e)},{passive:false});
-  });
-  drawConnections();
-}
-function drag(el,card,startEvent){
-  let sx=startEvent.clientX,sy=startEvent.clientY,ox=card.x,oy=card.y;el.setPointerCapture(startEvent.pointerId);
-  const move=e=>{card.x=Math.max(5,Math.min(canvas.clientWidth-el.offsetWidth-5,ox+e.clientX-sx));card.y=Math.max(55,Math.min(canvas.clientHeight-el.offsetHeight-10,oy+e.clientY-sy));el.style.left=card.x+'px';el.style.top=card.y+'px';drawConnections()};
-  const up=()=>{el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',up);save()};el.addEventListener('pointermove',move);el.addEventListener('pointerup',up,{once:true})
-}
+function render(){canvas.querySelectorAll('.thought-card').forEach(x=>x.remove());$('#emptyState').style.display=cards.length?'none':'block';$('#count').textContent=`${cards.length} ta fikr`;$('#findStep').disabled=!cards.length;$('#flowText').textContent=connectingFrom?'Bog‘lanish uchun boshqa fikrni bosing.':cards.length?`${cards.length} fikr orasidan yo‘nalishni ajrating.`:'Bitta fikr yozing — Oydin siz uchun signalni topadi.';cards.forEach(card=>{const el=document.createElement('article');el.className=`thought-card ${category(card.type)}${connectingFrom===card.id?' connect-source':''}`;el.style.left=card.x+'px';el.style.top=card.y+'px';el.dataset.id=card.id;el.innerHTML=`<button class="delete" title="O‘chirish" type="button" aria-label="Fikrni o‘chirish">×</button><button class="link-card" title="Boshqa fikr bilan bog‘lash" type="button" aria-label="Fikrni bog‘lash">↗</button><span class="card-type">${safe(card.type).toUpperCase()}</span><p>${safe(card.text)}</p>`;canvas.append(el);el.querySelector('.delete').onclick=e=>{e.stopPropagation();cards=cards.filter(c=>c.id!==card.id);connections=connections.filter(x=>x.from!==card.id&&x.to!==card.id);if(connectingFrom===card.id)connectingFrom=null;save();render()};el.querySelector('.link-card').onclick=e=>{e.stopPropagation();connectingFrom=card.id;render()};el.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;if(connectingFrom&&connectingFrom!==card.id){e.preventDefault();connect(connectingFrom,card.id);return}drag(el,card,e)},{passive:false})});drawConnections()}
+function drag(el,card,startEvent){let sx=startEvent.clientX,sy=startEvent.clientY,ox=card.x,oy=card.y;el.setPointerCapture(startEvent.pointerId);const move=e=>{card.x=Math.max(5,Math.min(canvas.clientWidth-el.offsetWidth-5,ox+e.clientX-sx));card.y=Math.max(55,Math.min(canvas.clientHeight-el.offsetHeight-10,oy+e.clientY-sy));el.style.left=card.x+'px';el.style.top=card.y+'px';drawConnections()};const up=()=>{el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',up);save()};el.addEventListener('pointermove',move);el.addEventListener('pointerup',up,{once:true})}
 function open(){dialog.showModal();setTimeout(()=>$('#thoughtText').focus(),80)}
 $('#addCard').onclick=open;$('#addFirst').onclick=open;$('#closeCard').onclick=()=>dialog.close();
-$('#spark').onclick=()=>{const p=prompts[Math.floor(Math.random()*prompts.length)];$('#promptChip').textContent=p;open()};
+function detectFocus(text){const t=text.toLowerCase();if(/(qo‘rq|qo'rq|xavotir|hadik|stress|bosim|vahima|qo'rqyap)/.test(t))return 'worry';if(/(o‘rgan|o'rgan|imtihon|dars|kitob|kod|ml|python|universitet|o‘qish|o'qish)/.test(t))return 'learning';if(/(ish|loyiha|project|deadline|vazifa|bajar|startap|biznes)/.test(t))return 'work';if(/(munosabat|do‘st|do'st|oila|sevgi|inson|odam)/.test(t))return 'people';return 'general'}
+function buildCoachQuestions(first){const focus=detectFocus(first);return {general:['Bu narsa sizga aynan nimasi bilan muhim?','Hozir bu masalada sizni eng ko‘p to‘xtatayotgan narsa nima?','Agar bugun faqat bitta kichik qadam qo‘ysangiz, u nima bo‘lardi?'],work:['Bu ish yoki loyiha bo‘yicha aynan nimaga erishmoqchisiz?','Hozir eng katta to‘siq nima: vaqt, bilim, noaniqlik yoki boshqa narsa?','Bugun buni oldinga siljitadigan eng kichik amaliy qadam qaysi?'],learning:['Nimani o‘rganishingiz yoki tushunishingiz siz uchun eng muhim?','Hozir qayerida tiqilib qolyapsiz: boshlash, tushunish yoki davom ettirishda?','Bugun atigi 20 daqiqa ajratsangiz, nimani aniq qilib qo‘ygan bo‘lardingiz?'],worry:['Bu xavotirning eng og‘ir tomoni nimada?','Siz nazorat qila oladigan qismi qaysi, nazorat qila olmaydigan qismi qaysi?','Hozir o‘zingizga yengillik beradigan eng kichik qadam nima?'],people:['Bu inson yoki munosabatda siz uchun aslida nima muhim?','Aytilmay qolgan yoki aniqlashni istayotgan narsa nima?','Vaziyatni yaxshilash uchun siz tomondan qilinadigan eng kichik qadam qaysi?']}[focus]}
+function startCoach(){coach.active=true;coach.step=0;coach.answers=[];coach.questions=[];$('#coachAnswer').value='';$('#coachQuestion').textContent='Hozir sizni eng ko‘p o‘ylantirayotgan narsa nima?';$('#coachHint').textContent='Birinchi javobingizni erkin yozing. Chiroyli jumla shart emas.';$('#coachProgress').textContent='1 / 4';$('#coachLabel').textContent='1-savol';$('#coachNext').innerHTML='Davom etish <span>→</span>';$('#coachDialog').showModal();setTimeout(()=>$('#coachAnswer').focus(),80)}
+function finishCoach(){const answers=coach.answers.filter(Boolean);const combined=answers.join(' '),focus=detectFocus(combined),type=focus==='worry'?'Xavotir':focus==='work'?'Vazifa':'G‘oya',base=cards.length,n=cards.length;answers.forEach((text,i)=>cards.push({id:Date.now()+i,text,type:i===0?type:'G‘oya',x:Math.max(30,((base+i)*73)%Math.max(160,canvas.clientWidth-230)),y:90+((base+i)*81)%Math.max(180,canvas.clientHeight-220)}));const firstId=cards[base]?.id;answers.slice(1).forEach((_,i)=>{if(firstId)connections.push({from:firstId,to:cards[base+i+1].id})});save();$('#coachDialog').close();render();$('#flowText').textContent='Suhbat yakunlandi. 4 ta javob xaritaga tushdi — endi Oydin signalni topishga tayyor.';setTimeout(()=>$('#findStep').focus(),120)}
+$('#spark').onclick=startCoach;
+$('#coachForm').addEventListener('submit',e=>{e.preventDefault();const answer=$('#coachAnswer').value.trim();if(!answer)return;coach.answers.push(answer);if(coach.step===0)coach.questions=buildCoachQuestions(answer);coach.step++;if(coach.step>=4){finishCoach();return}$('#coachQuestion').textContent=coach.questions[coach.step-1];$('#coachHint').textContent=coach.step===3?'Javobingizni imkon qadar aniq qiling — keyin Oydin suhbatdan xarita tuzadi.':'Oldingi javobingizga tayangan holda davom etamiz.';$('#coachProgress').textContent=`${coach.step+1} / 4`;$('#coachLabel').textContent=`${coach.step+1}-savol`;$('#coachNext').innerHTML=coach.step===3?'Xaritaga chiqarish <span>→</span>':'Davom etish <span>→</span>';$('#coachAnswer').value='';setTimeout(()=>$('#coachAnswer').focus(),80)});
+$('#closeCoach').onclick=()=>$('#coachDialog').close();
 $('#findStep').onclick=async()=>{$('#findStep').disabled=true;$('#flowText').textContent='Fikrlar orasidagi bog‘liqlikni tahlil qilyapmiz…';const result=await insight();$('#flowText').textContent=result;$('#flowBar').style.borderColor='#f16e59';$('#findStep').disabled=!cards.length};
 $('#themeToggle').onclick=()=>{const night=document.body.classList.toggle('night');localStorage.setItem('oydin-theme',night?'night':'light');$('#themeToggle').setAttribute('aria-label',night?'Kunduzgi rejimni yoqish':'Tungi rejimni yoqish')};if(localStorage.getItem('oydin-theme')==='night')document.body.classList.add('night');
 $('#newMap').onclick=()=>{if(confirm('Yangi xarita boshlansinmi? Hozirgi kartalar va bog‘lanishlar o‘chadi.')){cards=[];connections=[];connectingFrom=null;$('#mapTitle').value='Yangi xarita';save();render()}};
