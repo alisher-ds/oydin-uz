@@ -3,12 +3,6 @@ import { hashToken, now, randomToken, safeId } from '../_lib/vault.js';
 
 const MAX_DATA = 180_000;
 
-async function readBody(request) {
-  const body = await request.json();
-  if (!body || typeof body !== 'object') throw Object.assign(new Error('Invalid body.'), { status: 400 });
-  return body;
-}
-
 function tokenFrom(request, body) {
   return String(request.headers.get('X-Oydin-Vault') || body.token || '').trim();
 }
@@ -23,6 +17,7 @@ async function findVault(env, token) {
 async function getOrCreateVault(env, token) {
   const existing = await findVault(env, token);
   if (existing) return existing;
+
   const id = safeId('vault');
   const time = now();
   try {
@@ -30,7 +25,6 @@ async function getOrCreateVault(env, token) {
       'INSERT INTO vaults (id, token_hash, created_at, updated_at) VALUES (?, ?, ?, ?)'
     ).bind(id, await hashToken(token), time, time).run();
   } catch (error) {
-    // A valid, previously issued token must never silently create a second vault.
     if (String(error?.message || '').toLowerCase().includes('unique')) {
       const raced = await findVault(env, token);
       if (raced) return raced;
@@ -40,11 +34,18 @@ async function getOrCreateVault(env, token) {
   return { id };
 }
 
+function decodeRows(rows) {
+  return (rows.results || []).map(row => {
+    try { return JSON.parse(row.data_json); } catch { return null; }
+  }).filter(Boolean);
+}
+
 export async function onRequestPost({ request, env }) {
   const checked = await guard(request, env, { maxBytes: MAX_DATA + 12_000 });
   if (checked.response) return checked.response;
+
   try {
-    const body = await readBody(request);
+    const body = await checked.readJson();
     let token = tokenFrom(request, body);
     const isNewVault = !token;
     if (!token) token = randomToken();
@@ -62,6 +63,7 @@ export async function onRequestPost({ request, env }) {
       if (!space?.id || typeof space.id !== 'string') continue;
       const data = JSON.stringify(space);
       if (data.length > MAX_DATA / 2) continue;
+
       await env.OYDIN_DB.prepare(
         `INSERT INTO spaces (id, vault_id, title, data_json, updated_at)
          VALUES (?, ?, ?, ?, ?)
@@ -88,15 +90,13 @@ export async function onRequestPost({ request, env }) {
 
     return json({
       ...(isNewVault ? { token } : {}),
-      spaces: (rows.results || []).map(r => {
-        try { return JSON.parse(r.data_json); } catch { return null; }
-      }).filter(Boolean),
+      spaces: decodeRows(rows),
       syncedAt: time
     });
   } catch (error) {
     console.error('Oydin sync error:', error);
     return json(
-      { error: error?.status === 400 || error?.status === 401 ? error.message : 'Sync failed.' },
+      { error: error?.status === 400 || error?.status === 401 || error?.status === 413 ? error.message : 'Sync failed.' },
       error?.status || 502
     );
   }
@@ -107,14 +107,12 @@ export async function onRequestGet({ request, env }) {
     const token = String(request.headers.get('X-Oydin-Vault') || '').trim();
     const vault = await findVault(env, token);
     if (!vault) return json({ error: 'Vault not found.' }, 404);
+
     const rows = await env.OYDIN_DB.prepare(
       'SELECT data_json FROM spaces WHERE vault_id = ? ORDER BY updated_at DESC'
     ).bind(vault.id).all();
-    return json({
-      spaces: (rows.results || []).map(r => {
-        try { return JSON.parse(r.data_json); } catch { return null; }
-      }).filter(Boolean)
-    });
+
+    return json({ spaces: decodeRows(rows) });
   } catch (error) {
     return json({ error: error?.status === 401 ? error.message : 'Sync service unavailable.' }, error?.status || 503);
   }
