@@ -4,27 +4,22 @@
   const MAX_SPACES = 50;
 
   const normalize = value => {
-    if (Array.isArray(value)) {
-      return value.filter(item => item && typeof item === 'object' && item.id);
-    }
+    if (Array.isArray(value)) return value.filter(item => item && typeof item === 'object' && item.id);
     if (value && typeof value === 'object') {
-      return Object.entries(value)
-        .map(([id, item]) => {
-          if (!item || typeof item !== 'object') return null;
-          return { ...item, id: item.id || id };
-        })
-        .filter(item => item && item.id);
+      return Object.entries(value).map(([id, item]) => {
+        if (!item || typeof item !== 'object') return null;
+        return { ...item, id: item.id || id };
+      }).filter(item => item && item.id);
     }
     return [];
   };
 
   const read = () => {
-    try {
-      return normalize(JSON.parse(localStorage.getItem('oydin-maps') || '{}'));
-    } catch {
-      return [];
-    }
+    try { return normalize(JSON.parse(localStorage.getItem('oydin-maps') || '{}')); }
+    catch { return []; }
   };
+
+  const stable = spaces => JSON.stringify(normalize(spaces).sort((a,b) => String(a.id).localeCompare(String(b.id))));
 
   const write = spaces => {
     const byId = Object.fromEntries(normalize(spaces).map(space => [String(space.id), space]));
@@ -48,54 +43,46 @@
   let timer;
 
   async function sync() {
-    if (inFlight) {
-      queued = true;
-      return;
-    }
-
+    if (inFlight) { queued = true; return; }
     inFlight = true;
     try {
       const token = localStorage.getItem(TOKEN_KEY);
-      const spaces = read().slice(0, MAX_SPACES);
+      const localSpaces = read().slice(0, MAX_SPACES);
       const headers = { 'content-type': 'application/json' };
       if (token) headers['X-Oydin-Vault'] = token;
 
       const response = await fetch('/api/sync', {
-        method: 'POST',
-        headers,
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          ...(token ? { token } : {}),
-          spaces
-        })
+        method: 'POST', headers, credentials: 'same-origin',
+        body: JSON.stringify({ ...(token ? { token } : {}), spaces: localSpaces })
       });
-
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || `Sync failed (${response.status})`);
 
       if (data.token && !token) localStorage.setItem(TOKEN_KEY, data.token);
 
       if (Array.isArray(data.spaces)) {
-        write(merge(spaces, data.spaces));
+        const merged = merge(localSpaces, data.spaces);
+        const changed = stable(localSpaces) !== stable(merged);
+        if (changed) write(merged);
+        if (changed && document.visibilityState !== 'hidden') {
+          window.dispatchEvent(new CustomEvent('oydin:remote-synced', { detail: { spaces: merged } }));
+          // The current map UI keeps an in-memory model; a single reload applies
+          // the authoritative merged snapshot without duplicating state logic.
+          location.reload();
+          return data;
+        }
       }
 
       const syncedAt = data.syncedAt || new Date().toISOString();
       localStorage.setItem(LAST_KEY, syncedAt);
-      window.dispatchEvent(new CustomEvent('oydin:sync', {
-        detail: { ok: true, at: syncedAt }
-      }));
+      window.dispatchEvent(new CustomEvent('oydin:sync', { detail: { ok: true, at: syncedAt } }));
       return data;
     } catch (error) {
-      window.dispatchEvent(new CustomEvent('oydin:sync', {
-        detail: { ok: false, error: error.message }
-      }));
+      window.dispatchEvent(new CustomEvent('oydin:sync', { detail: { ok: false, error: error.message } }));
       return null;
     } finally {
       inFlight = false;
-      if (queued) {
-        queued = false;
-        schedule(50);
-      }
+      if (queued) { queued = false; schedule(50); }
     }
   }
 
@@ -112,15 +99,11 @@
   });
 
   window.addEventListener('online', () => schedule(100));
-  window.addEventListener('pagehide', () => {
-    if (navigator.onLine) sync();
-  });
+  window.addEventListener('pagehide', () => { if (navigator.onLine) sync(); });
   window.addEventListener('oydin:data-changed', event => {
     if (event.detail?.key === 'oydin-maps') schedule();
   });
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) schedule(100);
-  });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) schedule(100); });
 
   schedule(500);
 })();
