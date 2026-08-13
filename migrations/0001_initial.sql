@@ -8,11 +8,12 @@ CREATE TABLE IF NOT EXISTS vaults (
 );
 
 CREATE TABLE IF NOT EXISTS spaces (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   vault_id TEXT NOT NULL,
   title TEXT NOT NULL DEFAULT 'Yangi makon',
   data_json TEXT NOT NULL,
   updated_at TEXT NOT NULL,
+  PRIMARY KEY (vault_id, id),
   FOREIGN KEY (vault_id) REFERENCES vaults(id) ON DELETE CASCADE
 );
 
