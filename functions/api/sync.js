@@ -2,6 +2,7 @@ import { guard, json } from '../_lib/guard.js';
 import { hashToken, now, randomToken, safeId } from '../_lib/vault.js';
 
 const MAX_DATA = 180_000;
+const MAX_SPACES = 50;
 
 function tokenFrom(request, body) {
   return String(request.headers.get('X-Oydin-Vault') || body.token || '').trim();
@@ -17,7 +18,6 @@ async function findVault(env, token) {
 async function getOrCreateVault(env, token) {
   const existing = await findVault(env, token);
   if (existing) return existing;
-
   const id = safeId('vault');
   const time = now();
   try {
@@ -53,32 +53,31 @@ export async function onRequestPost({ request, env }) {
     const vault = isNewVault
       ? await getOrCreateVault(env, token)
       : await findVault(env, token);
-
     if (!vault) return json({ error: 'Vault not found.' }, 401);
 
     const spaces = Array.isArray(body.spaces) ? body.spaces : [];
     if (JSON.stringify(spaces).length > MAX_DATA) return json({ error: 'Sync payload is too large.' }, 413);
 
-    for (const space of spaces.slice(0, 50)) {
+    for (const space of spaces.slice(0, MAX_SPACES)) {
       if (!space?.id || typeof space.id !== 'string') continue;
       const data = JSON.stringify(space);
       if (data.length > MAX_DATA / 2) continue;
+      const updatedAt = String(space.updatedAt || space.updated_at || now());
 
       await env.OYDIN_DB.prepare(
         `INSERT INTO spaces (id, vault_id, title, data_json, updated_at)
          VALUES (?, ?, ?, ?, ?)
-         ON CONFLICT(id) DO UPDATE SET
+         ON CONFLICT(vault_id, id) DO UPDATE SET
            title=excluded.title,
            data_json=excluded.data_json,
            updated_at=excluded.updated_at
-         WHERE spaces.vault_id=excluded.vault_id
-           AND spaces.updated_at <= excluded.updated_at`
+         WHERE spaces.updated_at <= excluded.updated_at`
       ).bind(
         space.id,
         vault.id,
         String(space.title || 'Yangi makon').slice(0, 160),
         data,
-        String(space.updatedAt || now())
+        updatedAt
       ).run();
     }
 
@@ -107,11 +106,9 @@ export async function onRequestGet({ request, env }) {
     const token = String(request.headers.get('X-Oydin-Vault') || '').trim();
     const vault = await findVault(env, token);
     if (!vault) return json({ error: 'Vault not found.' }, 404);
-
     const rows = await env.OYDIN_DB.prepare(
       'SELECT data_json FROM spaces WHERE vault_id = ? ORDER BY updated_at DESC'
     ).bind(vault.id).all();
-
     return json({ spaces: decodeRows(rows) });
   } catch (error) {
     return json({ error: error?.status === 401 ? error.message : 'Sync service unavailable.' }, error?.status || 503);
