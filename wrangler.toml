@@ -1,8 +1,29 @@
 name = "oydin"
 compatibility_date = "2026-08-13"
+pages_build_output_dir = "."
 
 [[d1_databases]]
 binding = "OYDIN_DB"
 database_name = "oydin-db"
 database_id = "1730a3e3-2c06-45e8-b8c3-d42aa5877f39"
 migrations_dir = "migrations"
+
+# Rate limiting.
+#
+# Asosiy hisoblagich D1 dagi `rate_limits` jadvalida — u har doim ishlaydi va
+# butun dunyo bo'ylab bitta. Ilgari kod `env.OYDIN_RATE_LIMITER` ni afzal
+# ko'rardi, lekin bu binding hech qachon e'lon qilinmagan edi, ya'ni amalda
+# har doim izolyat-ichi (ishlamaydigan) zaxira ishlatilardi.
+#
+# Cloudflare'ning tabiiy rate limiter binding'i hisobingizda mavjud bo'lsa,
+# quyidagi blokni yoqing — kod uni avtomatik afzal ko'radi va D1 zaxira
+# bo'lib qoladi.
+#
+# [[unsafe.bindings]]
+# name = "OYDIN_RATE_LIMITER"
+# type = "ratelimit"
+# namespace_id = "1001"
+# simple = { limit = 60, period = 60 }
+
+# GEMINI_API_KEY maxfiy sifatida saqlanadi, bu faylda EMAS:
+#   npx wrangler pages secret put GEMINI_API_KEY

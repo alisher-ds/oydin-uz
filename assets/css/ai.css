@@ -1,0 +1,131 @@
+/* ==========================================================================
+   Oydin — suhbat oynasi
+   ========================================================================== */
+
+#oydinAiDialog {
+  width: min(720px, calc(100vw - 28px));
+  max-height: min(780px, calc(100dvh - 28px));
+  padding: 0;
+  border: 0;
+  border-radius: 24px;
+  background: transparent;
+  box-shadow: 0 24px 80px rgb(30, 27, 22, 0.18);
+}
+#oydinAiDialog::backdrop {
+  background: rgb(25, 23, 20, 0.32);
+  backdrop-filter: blur(5px);
+}
+.ai-dialog {
+  position: relative;
+  padding: 30px;
+  background: #f6f2ea;
+  color: #24211d;
+  border: 1px solid rgb(65, 58, 48, 0.14);
+  border-radius: 24px;
+}
+.ai-dialog h2 {
+  margin: 4px 0 8px;
+  font-size: clamp(26px, 4vw, 38px);
+  letter-spacing: -0.03em;
+}
+.ai-dialog .dialog-hint {
+  max-width: 580px;
+  margin: 0 0 22px;
+  color: #716b61;
+  line-height: 1.6;
+}
+.ai-dialog .dialog-close {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+}
+.ai-messages {
+  display: grid;
+  gap: 12px;
+  max-height: 420px;
+  overflow: auto;
+  padding: 4px 2px 14px;
+}
+.ai-message {
+  max-width: 84%;
+  padding: 13px 16px;
+  border-radius: 16px;
+  border: 1px solid rgb(65, 58, 48, 0.1);
+  background: rgb(255, 255, 255, 0.5);
+}
+.ai-message.is-user {
+  margin-left: auto;
+  background: #e9e2d7;
+}
+.ai-message span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8a8175;
+  margin-bottom: 5px;
+}
+.ai-message p {
+  margin: 0;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.ai-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: end;
+  border-top: 1px solid rgb(65, 58, 48, 0.1);
+  padding-top: 16px;
+}
+.ai-form textarea {
+  min-height: 58px;
+  max-height: 150px;
+  resize: vertical;
+  border: 1px solid rgb(65, 58, 48, 0.16);
+  border-radius: 14px;
+  padding: 13px 14px;
+  background: rgb(255, 255, 255, 0.7);
+  font: inherit;
+  color: inherit;
+  outline: none;
+}
+.ai-form textarea:focus {
+  border-color: rgb(65, 58, 48, 0.42);
+}
+.ai-status {
+  min-height: 18px;
+  margin: 8px 2px 0;
+  color: #7c756b;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  #oydinAiDialog {
+    width: calc(100vw - 14px);
+    max-height: calc(100dvh - 14px);
+  }
+  .ai-dialog {
+    padding: 22px 16px;
+  }
+  .ai-form {
+    grid-template-columns: 1fr;
+  }
+  .ai-form .primary-button {
+    width: 100%;
+  }
+  .ai-messages {
+    max-height: 46dvh;
+  }
+  .ai-message {
+    max-width: 92%;
+  }
+}
+
+.ai-status[data-tone='error'] {
+  color: #9f4c45;
+  font-weight: 700;
+}
+.ai-status[data-tone='pending'] {
+  color: var(--muted);
+}
