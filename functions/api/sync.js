@@ -12,6 +12,7 @@
  */
 
 import { checkLimit, clientIp, guard, json } from '../_lib/guard.js';
+import { ensureSchema } from '../_lib/schema.js';
 import {
   hashToken,
   isValidToken,
@@ -26,8 +27,8 @@ const MAX_SPACE_BYTES = 90_000;
 const MAX_SPACES = 50;
 const MAX_DELETIONS = 200;
 
-/** Yangi vault yaratish: soatiga 5 ta IP uchun. */
-const VAULT_CREATE_LIMIT = 5;
+/** Yangi vault yaratish: soatiga 10 ta IP uchun. */
+const VAULT_CREATE_LIMIT = 10;
 const VAULT_CREATE_WINDOW = 3600;
 
 const tokenFrom = request =>
@@ -103,6 +104,11 @@ export async function onRequestPost({ request, env }) {
   if (checked.response) return checked.response;
 
   try {
+    // Jadvallar yo'q bo'lsa yaratamiz — qo'lda migratsiya qilish shart emas.
+    if (!(await ensureSchema(env))) {
+      return json({ error: 'Baza tayyor emas. Bir ozdan keyin urinib ko‘ring.' }, 503);
+    }
+
     const body = await checked.readJson();
     const token = tokenFrom(request);
     const isNewVault = !token;
@@ -112,19 +118,21 @@ export async function onRequestPost({ request, env }) {
 
     if (isNewVault) {
       // Vault yaratish — alohida va qattiqroq cheklov ostida.
-      const created = await checkLimit(
-        env,
-        `ip:${clientIp(request)}:vault-create`,
-        VAULT_CREATE_LIMIT,
-        VAULT_CREATE_WINDOW
-      );
-      if (!created.ok) {
+      const bucket = `ip:${clientIp(request)}:vault-create`;
+      // Avval hisoblagichni OSHIRMASDAN tekshiramiz.
+      const allowed = await checkLimit(env, bucket, VAULT_CREATE_LIMIT, VAULT_CREATE_WINDOW, {
+        count: false
+      });
+      if (!allowed.ok) {
         return json({ error: 'Too many vaults created. Please try again later.' }, 429, {
-          'retry-after': String(created.retryAfter)
+          'retry-after': String(allowed.retryAfter)
         });
       }
       issuedToken = randomToken();
       vault = await createVault(env, issuedToken);
+      // Faqat vault HAQIQATAN yaratilgach hisoblaymiz — server xatosi tufayli
+      // tushgan urinishlar foydalanuvchini bloklab qo'ymasin.
+      await checkLimit(env, bucket, VAULT_CREATE_LIMIT, VAULT_CREATE_WINDOW);
     } else {
       vault = await findVault(env, token);
       if (!vault) return json({ error: 'Vault not found.' }, 401);
@@ -226,6 +234,7 @@ export async function onRequestGet({ request, env }) {
   if (checked.response) return checked.response;
 
   try {
+    if (!(await ensureSchema(env))) return json({ error: 'Baza tayyor emas.' }, 503);
     const vault = await findVault(env, tokenFrom(request));
     if (!vault) return json({ error: 'Vault not found.' }, 404);
     return json(await readVaultState(env, vault.id));

@@ -1,5 +1,10 @@
 # Migratsiyalar
 
+> **Eslatma:** jadvallar `functions/_lib/schema.js` tomonidan birinchi API
+> soʻrovida avtomatik yaratiladi, shuning uchun deployda qoʻlda migratsiya
+> qilish SHART EMAS. Bu papka sxemani ataylab boshqarish uchun.
+> Ikkalasining mosligini `tests/unit/schema.test.js` tekshiradi.
+
 Sxemaning yagona haqiqat manbai — shu papka. Ilgari ildizda `schema.sql` ham
 bor edi va u allaqachon 0002-migratsiyaning shaklini olib yurardi; bitta
 sxema uchun ikkita manba bo'lishi chalkashlik keltirib chiqaradi.

@@ -6,9 +6,10 @@
  */
 
 import { checkLimit, clientIp, json } from '../_lib/guard.js';
+import { ensureSchema } from '../_lib/schema.js';
 
 export async function onRequestGet({ request, env }) {
-  const limited = await checkLimit(env, `ip:${clientIp(request)}:health`, 10, 60);
+  const limited = await checkLimit(env, `ip:${clientIp(request)}:health`, 60, 60);
   if (!limited.ok) {
     return json({ ok: false, error: 'rate_limited' }, 429, {
       'retry-after': String(limited.retryAfter)
@@ -17,6 +18,9 @@ export async function onRequestGet({ request, env }) {
 
   try {
     if (!env.OYDIN_DB) return json({ ok: false, service: 'd1', error: 'binding_missing' }, 503);
+
+    // Jadvallar yo'q bo'lsa shu yerda yaratiladi.
+    await ensureSchema(env);
 
     const result = await env.OYDIN_DB.prepare('SELECT 1 AS ok').first();
     if (Number(result?.ok) !== 1) throw new Error('D1 health query failed');

@@ -1,0 +1,269 @@
+/* ==========================================================================
+   Oydin — umumiy komponentlar
+   ==========================================================================
+   Bu fayl HAR BIR sahifada yuklanadi.
+
+   Nima uchun kerak: `mountSyncUI()` va tasdiqlash oynalari uchala sahifada
+   ham ishlaydi, lekin ularning uslublari faqat `map.css` da edi. Natijada
+   bosh sahifa va Oqimda sinxronizatsiya belgisi hamda vault oynasi
+   butunlay uslubsiz — brauzerning standart ko'rinishida chiqardi.
+   ========================================================================== */
+
+dialog {
+  border: 1px solid var(--line);
+  border-radius: 21px;
+  padding: 0;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 0 35px 100px rgb(0, 0, 0, 0.3);
+  width: min(550px, calc(100vw - 28px));
+}
+
+dialog::backdrop {
+  background: rgb(10, 12, 10, 0.48);
+  backdrop-filter: blur(6px);
+}
+
+.dialog-close {
+  position: absolute;
+  right: 18px;
+  top: 16px;
+  border: 0;
+  background: transparent;
+  font-size: 25px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.product-dialog {
+  /* Kenglikni `dialog` elementi belgilaydi. Ilgari bu panel o'z dialogidan
+     keng edi (560px > 550px) va kontent o'ng chetdan qirqilardi. */
+  width: 100%;
+  box-sizing: border-box;
+  padding: 28px;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: 0 25px 80px rgb(0, 0, 0, 0.16);
+}
+
+.product-dialog input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline: none;
+}
+
+.product-dialog input:focus {
+  border-color: var(--accent);
+}
+
+.confirm-dialog {
+  width: min(460px, calc(100vw - 28px));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.confirm-body {
+  display: grid;
+  gap: 14px;
+  padding: 26px;
+}
+
+.confirm-body h2 {
+  margin: 0;
+  font: 600 22px/1.2 var(--font-serif);
+}
+
+.confirm-body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.prompt-field {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font: 600 10px var(--font-sans);
+}
+
+.prompt-field input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 500 13px var(--font-sans);
+}
+
+.is-danger {
+  border-color: #9f4c45 !important;
+  background: #9f4c45 !important;
+  color: #fff !important;
+}
+
+.sync-status {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+  color: var(--muted);
+  font: 500 9px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.sync-status:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.sync-status[data-state='ok'] .sync-dot {
+  background: #4f8a63;
+}
+
+.sync-status[data-state='syncing'] .sync-dot {
+  background: var(--gold);
+  animation: oydin-pulse 1.1s ease-in-out infinite;
+}
+
+.sync-status[data-state='offline'] .sync-dot,
+.sync-status[data-state='throttled'] .sync-dot {
+  background: var(--gold);
+}
+
+.sync-status[data-state='error'] .sync-dot {
+  background: #9f4c45;
+}
+
+/* Vault oynasi uzun kalit maydonlari uchun kengroq. */
+#vaultDialog {
+  width: min(660px, calc(100vw - 24px));
+}
+
+.vault-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  color: var(--muted);
+  font: 600 10px var(--font-sans);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.vault-token-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.vault-token-row > button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.vault-token-row input {
+  flex: 1 1 12ch;
+  min-width: 0;
+  box-sizing: border-box;
+  text-overflow: ellipsis;
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 400 12px var(--font-mono);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.vault-token-row input[readonly] {
+  color: var(--muted);
+}
+
+.vault-message {
+  min-height: 18px;
+  margin: 12px 0 0;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.vault-message[data-tone='error'] {
+  color: #9f4c45;
+}
+
+.vault-message[data-tone='ok'] {
+  color: #4f8a63;
+}
+
+.vault-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.vault-footer small {
+  color: var(--muted);
+  font: 400 10px var(--font-mono);
+}
+
+@keyframes oydin-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (max-width: 650px) {
+  .vault-token-row {
+    flex-wrap: wrap;
+  }
+  .vault-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .sync-status .sync-text {
+    display: none;
+  }
+}

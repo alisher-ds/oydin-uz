@@ -59,10 +59,20 @@ function isAllowedOrigin(request) {
   }
 }
 
-function memoryLimit(bucket, limit, windowSeconds) {
+function memoryLimit(bucket, limit, windowSeconds, count = true) {
   const now = Date.now();
   const windowMs = windowSeconds * 1000;
   const previous = memoryBuckets.get(bucket);
+
+  if (!count) {
+    const active = previous && now - previous.started < windowMs;
+    return {
+      ok: !active || previous.count < limit,
+      retryAfter: active
+        ? Math.max(1, Math.ceil((windowMs - (now - previous.started)) / 1000))
+        : windowSeconds
+    };
+  }
 
   if (!previous || now - previous.started >= windowMs) {
     memoryBuckets.set(bucket, { started: now, count: 1 });
@@ -84,9 +94,19 @@ function memoryLimit(bucket, limit, windowSeconds) {
  * D1 ga tayangan atomik hisoblagich.
  * Bitta `INSERT ... ON CONFLICT ... RETURNING` — bitta murojaat.
  */
-async function databaseLimit(db, bucket, limit, windowSeconds) {
+async function databaseLimit(db, bucket, limit, windowSeconds, count) {
   const nowSeconds = Math.floor(Date.now() / 1000);
   const windowStart = nowSeconds - (nowSeconds % windowSeconds);
+
+  if (!count) {
+    // "Peek": hisoblagichni oshirmasdan o'qiymiz.
+    const current = await db
+      .prepare('SELECT hits, window_start FROM rate_limits WHERE bucket = ?')
+      .bind(bucket)
+      .first();
+    const hits = Number(current?.window_start) === windowStart ? Number(current.hits) : 0;
+    return { ok: hits < limit, retryAfter: Math.max(1, windowStart + windowSeconds - nowSeconds) };
+  }
 
   const row = await db
     .prepare(
@@ -120,11 +140,17 @@ async function sweep(db, windowSeconds) {
 
 /**
  * Bitta bucket bo'yicha cheklovni tekshiradi.
+ *
+ * @param {{count?: boolean}} options `count: false` — hisoblagichni
+ *   OSHIRMASDAN tekshiradi. Bu muvaffaqiyatsiz urinishlar kvotani yeb
+ *   qo'yishining oldini oladi: ilgari server xatosi tufayli tushgan besh
+ *   urinish foydalanuvchini bir soatga bloklab qo'yardi.
  * @returns {Promise<{ok: boolean, retryAfter: number}>}
  */
-export async function checkLimit(env, bucket, limit, windowSeconds) {
+export async function checkLimit(env, bucket, limit, windowSeconds, options = {}) {
+  const count = options.count !== false;
   // Cloudflare'ning tabiiy rate limiter binding'i mavjud bo'lsa — u afzal.
-  if (env?.OYDIN_RATE_LIMITER?.limit) {
+  if (count && env?.OYDIN_RATE_LIMITER?.limit) {
     try {
       const result = await env.OYDIN_RATE_LIMITER.limit({ key: bucket });
       return { ok: Boolean(result.success), retryAfter: windowSeconds };
@@ -134,14 +160,14 @@ export async function checkLimit(env, bucket, limit, windowSeconds) {
   }
   if (env?.OYDIN_DB) {
     try {
-      const result = await databaseLimit(env.OYDIN_DB, bucket, limit, windowSeconds);
-      await sweep(env.OYDIN_DB, windowSeconds);
+      const result = await databaseLimit(env.OYDIN_DB, bucket, limit, windowSeconds, count);
+      if (count) await sweep(env.OYDIN_DB, windowSeconds);
       return result;
     } catch (error) {
       console.error('D1 rate limiter ishlamadi:', error);
     }
   }
-  return memoryLimit(bucket, limit, windowSeconds);
+  return memoryLimit(bucket, limit, windowSeconds, count);
 }
 
 /**
