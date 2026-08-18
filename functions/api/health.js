@@ -1,6 +1,20 @@
-import { json } from '../_lib/guard.js';
+/**
+ * Xizmat holati.
+ *
+ * Endi cheklovga ega va jadval nomlarini oshkor qilmaydi — ilgari har bir
+ * autentifikatsiyasiz so'rov bepul DB so'rovini yuzaga keltirardi.
+ */
 
-export async function onRequestGet({ env }) {
+import { checkLimit, clientIp, json } from '../_lib/guard.js';
+
+export async function onRequestGet({ request, env }) {
+  const limited = await checkLimit(env, `ip:${clientIp(request)}:health`, 10, 60);
+  if (!limited.ok) {
+    return json({ ok: false, error: 'rate_limited' }, 429, {
+      'retry-after': String(limited.retryAfter)
+    });
+  }
+
   try {
     if (!env.OYDIN_DB) return json({ ok: false, service: 'd1', error: 'binding_missing' }, 503);
 
@@ -8,18 +22,20 @@ export async function onRequestGet({ env }) {
     if (Number(result?.ok) !== 1) throw new Error('D1 health query failed');
 
     const tables = await env.OYDIN_DB.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('vaults','spaces') ORDER BY name"
-    ).all();
-    const names = (tables.results || []).map(row => row.name);
-    const ready = names.includes('vaults') && names.includes('spaces');
+      `SELECT COUNT(*) AS found FROM sqlite_master
+       WHERE type = 'table' AND name IN ('vaults', 'spaces', 'space_deletions', 'rate_limits')`
+    ).first();
 
-    return json({
-      ok: ready,
-      service: 'd1',
-      schema: ready ? 'ready' : 'incomplete',
-      tables: names,
-      checkedAt: new Date().toISOString()
-    }, ready ? 200 : 503);
+    const ready = Number(tables?.found ?? 0) === 4;
+    return json(
+      {
+        ok: ready,
+        service: 'd1',
+        schema: ready ? 'ready' : 'incomplete',
+        checkedAt: new Date().toISOString()
+      },
+      ready ? 200 : 503
+    );
   } catch (error) {
     console.error('Oydin health error:', error);
     return json({ ok: false, service: 'd1', error: 'unavailable' }, 503);
