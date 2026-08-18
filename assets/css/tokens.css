@@ -1,13 +1,8 @@
 /* ==========================================================================
    Oydin — dizayn tokenlari va global asoslar
-   ==========================================================================
-   Bu fayl ranglar, soyalar va universal xatti-harakatlarni belgilaydi.
-   Komponent uslublari `base.css`, `map.css` va sahifa fayllarida.
    ========================================================================== */
 
 :root {
-  /* Shrift stacklari — har birida ishonchli zaxira oilasi bor.
-     Ilgari `font: 800 34px Manrope` kabi qisqartmalar zaxirasiz edi. */
   --font-sans: Manrope, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
   --font-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
@@ -21,9 +16,27 @@
   --accent: #d96b55;
   --accent-2: #b85b48;
   --gold: #b59a67;
+  --page-dot: #77756e35;
   --shadow: 0 24px 70px rgb(36, 35, 29, 0.12);
   --card-shadow: 0 16px 38px rgb(36, 35, 29, 0.13);
 }
+
+/* An explicit `.light` class is intentional: it must beat OS dark mode. */
+body.light {
+  --ink: #24241f;
+  --muted: #74756e;
+  --paper: #ebe7de;
+  --panel: #f6f3ec;
+  --surface: #e3dfd5;
+  --line: #cfcbc0;
+  --accent: #d96b55;
+  --accent-2: #b85b48;
+  --gold: #b59a67;
+  --page-dot: #77756e35;
+  --shadow: 0 24px 70px rgb(36, 35, 29, 0.12);
+  --card-shadow: 0 16px 38px rgb(36, 35, 29, 0.13);
+}
+
 body.night {
   --ink: #eee9df;
   --muted: #a7a69e;
@@ -34,17 +47,11 @@ body.night {
   --accent: #e17b63;
   --accent-2: #bd624f;
   --gold: #c7ad78;
+  --page-dot: #aaa99f25;
   --shadow: 0 26px 80px rgb(0, 0, 0, 0.28);
   --card-shadow: 0 17px 42px rgb(0, 0, 0, 0.28);
-  background-image: radial-gradient(#aaa99f25 0.7px, transparent 0.7px);
 }
 
-/* --------------------------------------------------------------------------
-   Tizim sozlamalariga hurmat
-   -------------------------------------------------------------------------- */
-
-/* Foydalanuvchi hali mavzu tanlamagan bo'lsa, operatsion tizimga ergashamiz.
-   `body.night` sinfi JS tomonidan qo'yiladi va bundan ustun turadi. */
 @media (prefers-color-scheme: dark) {
   body:not(.night, .light) {
     --ink: #eee9df;
@@ -56,13 +63,12 @@ body.night {
     --accent: #e08670;
     --accent-2: #c96e59;
     --gold: #c9ab74;
+    --page-dot: #aaa99f25;
     --shadow: 0 24px 70px rgb(0, 0, 0, 0.45);
     --card-shadow: 0 16px 38px rgb(0, 0, 0, 0.4);
   }
 }
 
-/* Harakatni kamaytirish so'ralgan bo'lsa, animatsiya va silliq aylantirish
-   o'chiriladi. Ilgari bu butun loyihada umuman hisobga olinmagan edi. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -74,17 +80,12 @@ body.night {
   }
 }
 
-/* --------------------------------------------------------------------------
-   Klaviatura fokusi — har bir interaktiv element uchun ko'rinadigan halqa
-   -------------------------------------------------------------------------- */
-
 :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 6px;
 }
 
-/* Faqat ekran o'quvchilari uchun matn. */
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -97,7 +98,6 @@ body.night {
   border: 0;
 }
 
-/* Klaviatura foydalanuvchilari uchun asosiy kontentga o'tish havolasi. */
 .skip-link {
   position: absolute;
   left: 12px;
@@ -107,10 +107,7 @@ body.night {
   border-radius: 10px;
   background: var(--ink);
   color: var(--paper);
-  font:
-    700 12px Manrope,
-    system-ui,
-    sans-serif;
+  font: 700 12px Manrope, system-ui, sans-serif;
   text-decoration: none;
   transition: top 0.18s;
 }
