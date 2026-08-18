@@ -20,6 +20,12 @@ function fakeD1() {
           return this;
         },
         async first() {
+          if (sql.startsWith('SELECT hits, window_start FROM rate_limits')) {
+            // "Peek" so'rovi — hisoblagichni oshirmaydi.
+            const [bucket] = bound;
+            const current = rows.get(bucket);
+            return current ? { hits: current.hits, window_start: current.windowStart } : null;
+          }
           if (sql.includes('INSERT INTO rate_limits')) {
             const [bucket, windowStart] = bound;
             const current = rows.get(bucket);
@@ -132,6 +138,31 @@ describe('checkLimit() — D1 asosidagi hisoblagich', () => {
     };
     assert.equal((await checkLimit(env, 'ip:6.6.6.6:sync', 10, 60)).ok, true);
     assert.ok(db.calls.prepare > 0, 'D1 zaxira yo‘li ishlamadi');
+  });
+
+  it('`count: false` hisoblagichni OSHIRMAYDI', async () => {
+    const db = fakeD1();
+    const env = { OYDIN_DB: db };
+    // Yuz marta "peek" qilamiz — kvota yeyilmasligi kerak.
+    for (let i = 0; i < 100; i += 1) {
+      const result = await checkLimit(env, 'ip:8.8.8.8:vault-create', 3, 3600, { count: false });
+      assert.equal(result.ok, true, `${i + 1}-tekshiruvda bloklandi`);
+    }
+    assert.equal(db.rows.has('ip:8.8.8.8:vault-create'), false, 'hisoblagich yozilib qolgan');
+  });
+
+  it('peek chegaraga yetganini to‘g‘ri ko‘radi', async () => {
+    const env = { OYDIN_DB: fakeD1() };
+    for (let i = 0; i < 3; i += 1) await checkLimit(env, 'ip:9.9.9.9:vault-create', 3, 3600);
+    const peek = await checkLimit(env, 'ip:9.9.9.9:vault-create', 3, 3600, { count: false });
+    assert.equal(peek.ok, false, 'chegara to‘lgani sezilmadi');
+  });
+
+  it('xotiradagi zaxirada ham `count: false` oshirmaydi', async () => {
+    const env = {};
+    for (let i = 0; i < 50; i += 1) {
+      assert.equal((await checkLimit(env, 'ip:7.7.7.9:vc', 2, 60, { count: false })).ok, true);
+    }
   });
 
   it('D1 ham bo‘lmasa xotiradagi zaxira ishlaydi', async () => {

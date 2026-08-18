@@ -12,6 +12,7 @@
  */
 
 import { checkLimit, guard, json } from '../_lib/guard.js';
+import { ensureSchema } from '../_lib/schema.js';
 import { hashToken, isValidToken } from '../_lib/vault.js';
 
 const MODEL = 'gemini-2.5-flash-lite';
@@ -52,6 +53,9 @@ export async function onRequestPost({ request, env }) {
   if (checked.response) return checked.response;
 
   try {
+    // Jadvallar yo'q bo'lsa yaratamiz (vault qidiruvi `vaults` ga tayanadi).
+    await ensureSchema(env);
+
     const token = String(request.headers.get('X-Oydin-Vault') ?? '')
       .trim()
       .toLowerCase();

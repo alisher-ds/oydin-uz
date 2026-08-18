@@ -20,7 +20,7 @@
     "lint:css": "stylelint \"assets/css/**/*.css\"",
     "lint:format": "prettier --check .",
     "format": "prettier --write .",
-    "test": "node --test tests/unit/*.test.js",
+    "test": "node --disable-warning=ExperimentalWarning --test tests/unit/*.test.js",
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run test"
   },

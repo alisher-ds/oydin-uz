@@ -78,8 +78,17 @@ npm run serve      # http://localhost:8000
 **Toʻliq, API bilan** — Cloudflare Wrangler kerak:
 
 ```bash
-npx wrangler d1 migrations apply oydin-db --local
 npm run dev        # http://localhost:8788
+```
+
+Baza jadvallari **avtomatik yaratiladi** — birinchi API soʻrovida
+`functions/_lib/schema.js` kerakli jadvallarni `CREATE TABLE IF NOT EXISTS`
+bilan tayyorlaydi. Qoʻlda migratsiya qilish shart emas.
+
+Sxemani ataylab boshqarmoqchi boʻlsangiz, migratsiyalar ham joyida:
+
+```bash
+npx wrangler d1 migrations apply oydin-db --local    # yoki --remote
 ```
 
 AI suhbat uchun maxfiy kalit:
@@ -109,14 +118,15 @@ CI har push va pull requestda shularning barchasini ishga tushiradi
 
 ```
 assets/
-  css/      tokens · base · map · oqim · ai · bir-daqiqa
+  css/      tokens · base · components · map · oqim · ai · bir-daqiqa
   js/
     core/       dom · storage · events · theme
     map/        state · geometry · camera · cards · connections · dialogs · thinking · tools
     oqim/ ai/ landing/ sync/ bir-daqiqa/
     boot-*.js   har sahifaning kirish nuqtasi
 functions/    Cloudflare Pages Functions (API)
-migrations/   D1 sxemasi (yagona haqiqat manbai)
+  _lib/schema.js  sxema bootstrap — jadvallarni avtomatik yaratadi
+migrations/   D1 sxemasi (bootstrap bilan mosligini test tekshiradi)
 tests/
   unit/       node:test
   e2e/        Playwright
