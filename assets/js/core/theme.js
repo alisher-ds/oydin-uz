@@ -3,8 +3,8 @@
  *
  * Tuzatilgan kamchiliklar:
  *  - operatsion tizim sozlamasi (`prefers-color-scheme`) endi hisobga olinadi;
- *  - `<meta name="theme-color">` mavzu bilan birga yangilanadi, shuning uchun
- *    brauzer paneli tungi rejimda yorug' bo'lib qolmaydi;
+ *  - foydalanuvchi tanlagan `light` rejim tizimning dark sozlamasi bilan ustma-ust kelmaydi;
+ *  - `<meta name="theme-color">` mavzu bilan birga yangilanadi;
  *  - tugma holati `aria-pressed` orqali yordamchi texnologiyalarga uzatiladi.
  */
 
@@ -25,7 +25,13 @@ export function currentTheme() {
 
 function paint(theme) {
   const night = theme === 'night';
+
+  // Muhim: `tokens.css` ning prefers-color-scheme qoidasi faqat `.night`
+  // yoki `.light` bo'lmagan bodyga tegishli. Avval faqat `.night` qo'yilganida,
+  // foydalanuvchi `light`ni tanlagan taqdirda ham OS dark rejimi uni qayta
+  // qorong'ilashtirardi. Endi ikkala holat ham aniq belgilanadi.
   document.body.classList.toggle('night', night);
+  document.body.classList.toggle('light', !night);
   document.documentElement.style.colorScheme = night ? 'dark' : 'light';
 
   let meta = $('meta[name="theme-color"]');
@@ -56,6 +62,7 @@ export function initTheme() {
   for (const button of $$('#themeToggle')) {
     button.addEventListener('click', toggleTheme);
   }
+
   // Foydalanuvchi o'z tanlovini qilmagan bo'lsa, tizim o'zgarishiga ergashamiz.
   globalThis.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', () => {
     if (readRaw(KEY) == null) paint(currentTheme());
