@@ -6,7 +6,7 @@ Loyiha bitta oddiy gʻoyani sinaydi: fikrlarga moslashuvchan joy berilsa —
 ularni yozish, joylashtirish, bogʻlash va vaqt oʻtishi bilan bitta manzara
 sifatida koʻrish mumkin boʻladi.
 
-🔗 [oydin.uz](https://oydin.uz) · [GitHub](https://github.com/alisher-ds/oydin-uz)
+🔗 [oydin-uz.pages.dev](https://oydin-uz.pages.dev) · [GitHub](https://github.com/alisher-ds/oydin-uz)
 
 ---
 

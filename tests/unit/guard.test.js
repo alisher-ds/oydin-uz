@@ -64,7 +64,7 @@ describe('json()', () => {
 });
 
 describe('clientIp()', () => {
-  const requestWith = headers => new Request('https://oydin.uz/api/sync', { headers });
+  const requestWith = headers => new Request('https://oydin-uz.pages.dev/api/sync', { headers });
 
   it('CF-Connecting-IP ni afzal ko‘radi', () => {
     assert.equal(
