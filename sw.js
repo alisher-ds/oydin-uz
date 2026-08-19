@@ -34,6 +34,7 @@ const PRECACHE = [
   '/assets/js/core/notes.js',
   '/assets/js/core/theme.js',
   '/assets/js/core/pwa.js',
+  '/assets/js/core/stat.js',
   '/favicon.svg',
   '/manifest.webmanifest'
 ];

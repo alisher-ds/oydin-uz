@@ -13,6 +13,7 @@
 
 import { $, el, isTypingTarget, on } from '../core/index.js';
 import { MAX_LENGTH, makeNote, readNotes, writeNotes } from '../core/notes.js';
+import { track } from '../core/stat.js';
 
 export function createTezPanel({ onPlace }) {
   const trigger = $('#railTez');
@@ -62,6 +63,7 @@ export function createTezPanel({ onPlace }) {
     const text = input.value.trim();
     if (!text) return;
     notes.unshift(makeNote(text));
+    track('tez');
     input.value = '';
     updateCount(input);
     persistNotes();

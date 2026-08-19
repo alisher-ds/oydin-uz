@@ -10,6 +10,7 @@
 
 import { $, $$, EVENTS, hasOpenDialog, isTypingTarget, on } from '../core/index.js';
 import { initTheme } from '../core/theme.js';
+import { track } from '../core/stat.js';
 import { createCamera } from './camera.js';
 import { createCardLayer } from './cards.js';
 import { createConnectionLayer } from './connections.js';
@@ -152,7 +153,10 @@ export function initMapPage() {
     handlers: {
       onSubmitCard: ({ id, parentId, text, type }) => {
         if (id) updateCard(id, { text, type });
-        else addCard({ text, type, parentId, viewportWidth: workspace.clientWidth });
+        else {
+          addCard({ text, type, parentId, viewportWidth: workspace.clientWidth });
+          track('fikr');
+        }
         save();
         render();
       },
@@ -169,6 +173,7 @@ export function initMapPage() {
       },
       onCreateMap: () => {
         createMap();
+        track('makon');
         save();
         loadMap();
       },
@@ -294,7 +299,10 @@ export function initMapPage() {
     if (!connectingFrom) return;
     const edge = connect(connectingFrom, targetId);
     connectingFrom = null;
-    if (edge) save();
+    if (edge) {
+      save();
+      track('aloqa');
+    }
     render();
   }
 
@@ -461,6 +469,7 @@ export function initMapPage() {
       // saqlanmaydi va sahifa yangilanishi bilan yo'qoladi.
       save();
       render();
+      track('tez:makonga');
       return true;
     }
   });
@@ -491,6 +500,7 @@ export function initMapPage() {
   $('#autoLayout')?.addEventListener('click', runAutoLayout);
   $('#newMap')?.addEventListener('click', () => {
     createMap();
+    track('makon');
     save();
     loadMap();
   });

@@ -12,6 +12,7 @@
 
 import { $, el, readJson, writeJson } from '../core/index.js';
 import { RECALL_KEY, humanAge, markShown, pickRecall } from '../core/recall.js';
+import { track } from '../core/stat.js';
 
 export function createRecallBar({ onOpenMap, onPlace }) {
   const host = $('#recall');
@@ -60,6 +61,7 @@ export function createRecallBar({ onOpenMap, onPlace }) {
       const openButton = el('button', { type: 'button', class: 'soft-button', text: 'Ochish' });
       openButton.addEventListener('click', () => {
         onOpenMap(item.mapId, item.id);
+        track('recall:qabul');
         hide();
       });
       actions.append(openButton);
@@ -67,6 +69,7 @@ export function createRecallBar({ onOpenMap, onPlace }) {
       const placeButton = el('button', { type: 'button', class: 'soft-button', text: 'Makonga' });
       placeButton.addEventListener('click', () => {
         onPlace(item.text, item.id);
+        track('recall:qabul');
         hide();
       });
       actions.append(placeButton);
@@ -78,7 +81,10 @@ export function createRecallBar({ onOpenMap, onPlace }) {
       'aria-label': 'Yopish',
       text: '×'
     });
-    dismiss.addEventListener('click', hide);
+    dismiss.addEventListener('click', () => {
+      track('recall:yopildi');
+      hide();
+    });
     actions.append(dismiss);
 
     host.append(el('div', { class: 'recall-body' }, [label, text]), actions);
@@ -86,6 +92,7 @@ export function createRecallBar({ onOpenMap, onPlace }) {
     // Ko'rsatilgani darhol qayd etiladi: foydalanuvchi hech narsa
     // bosmasa ham, ertaga boshqa fikr chiqishi kerak.
     writeJson(RECALL_KEY, markShown(state, item.id));
+    track('recall:korsatildi');
     markDecided();
   }
 

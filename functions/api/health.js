@@ -5,11 +5,11 @@
  * autentifikatsiyasiz so'rov bepul DB so'rovini yuzaga keltirardi.
  */
 
-import { checkLimit, clientIp, json } from '../_lib/guard.js';
+import { checkLimit, ipBucket, json } from '../_lib/guard.js';
 import { ensureSchema } from '../_lib/schema.js';
 
 export async function onRequestGet({ request, env }) {
-  const limited = await checkLimit(env, `ip:${clientIp(request)}:health`, 60, 60);
+  const limited = await checkLimit(env, await ipBucket(request, env, 'health'), 60, 60);
   if (!limited.ok) {
     return json({ ok: false, error: 'rate_limited' }, 429, {
       'retry-after': String(limited.retryAfter)
@@ -27,10 +27,10 @@ export async function onRequestGet({ request, env }) {
 
     const tables = await env.OYDIN_DB.prepare(
       `SELECT COUNT(*) AS found FROM sqlite_master
-       WHERE type = 'table' AND name IN ('vaults', 'spaces', 'space_deletions', 'rate_limits')`
+       WHERE type = 'table' AND name IN ('vaults', 'spaces', 'space_deletions', 'rate_limits', 'stats')`
     ).first();
 
-    const ready = Number(tables?.found ?? 0) === 4;
+    const ready = Number(tables?.found ?? 0) === 5;
     return json(
       {
         ok: ready,

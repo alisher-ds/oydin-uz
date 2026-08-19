@@ -11,7 +11,7 @@
  *    so'rov yangi D1 qatorini yaratardi.
  */
 
-import { checkLimit, clientIp, guard, json } from '../_lib/guard.js';
+import { checkLimit, guard, ipBucket, json } from '../_lib/guard.js';
 import { ensureSchema } from '../_lib/schema.js';
 import {
   hashToken,
@@ -118,7 +118,7 @@ export async function onRequestPost({ request, env }) {
 
     if (isNewVault) {
       // Vault yaratish — alohida va qattiqroq cheklov ostida.
-      const bucket = `ip:${clientIp(request)}:vault-create`;
+      const bucket = await ipBucket(request, env, 'vault-create');
       // Avval hisoblagichni OSHIRMASDAN tekshiramiz.
       const allowed = await checkLimit(env, bucket, VAULT_CREATE_LIMIT, VAULT_CREATE_WINDOW, {
         count: false

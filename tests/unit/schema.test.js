@@ -49,7 +49,7 @@ describe('sxema', () => {
     const files = applyMigrations(db);
     assert.ok(files.length >= 3, 'migratsiya fayllari topilmadi');
     const schema = describeSchema(db);
-    for (const table of ['vaults', 'spaces', 'space_deletions', 'rate_limits']) {
+    for (const table of ['vaults', 'spaces', 'space_deletions', 'rate_limits', 'stats']) {
       assert.ok(schema[`table:${table}`], `${table} jadvali yaratilmadi`);
     }
     db.close();
@@ -59,7 +59,7 @@ describe('sxema', () => {
     const db = new DatabaseSync(':memory:');
     for (const sql of SCHEMA_STATEMENTS) db.exec(sql);
     const schema = describeSchema(db);
-    for (const table of ['vaults', 'spaces', 'space_deletions', 'rate_limits']) {
+    for (const table of ['vaults', 'spaces', 'space_deletions', 'rate_limits', 'stats']) {
       assert.ok(schema[`table:${table}`], `${table} jadvali yaratilmadi`);
     }
     db.close();

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { checkLimit, clientIp, json } from '../../functions/_lib/guard.js';
+import { checkLimit, clientIp, ipBucket, json } from '../../functions/_lib/guard.js';
 
 /** Minimal D1 taqlidi: `rate_limits` jadvalining xotiradagi nusxasi. */
 function fakeD1() {
@@ -171,5 +171,42 @@ describe('checkLimit() — D1 asosidagi hisoblagich', () => {
       assert.equal((await checkLimit(env, 'ip:7.7.7.7:sync', 2, 60)).ok, true);
     }
     assert.equal((await checkLimit(env, 'ip:7.7.7.7:sync', 2, 60)).ok, false);
+  });
+});
+
+describe('ipBucket() — IP ochiq saqlanmasligi', () => {
+  const makeRequest = ip =>
+    new Request('https://oydin-uz.pages.dev/api/sync', {
+      headers: { 'CF-Connecting-IP': ip }
+    });
+
+  it('bucket kalitida OCHIQ IP bo‘lmaydi', async () => {
+    const bucket = await ipBucket(makeRequest('203.0.113.42'), {}, 'sync');
+    assert.ok(!bucket.includes('203.0.113.42'), `IP ochiq qoldi: ${bucket}`);
+    assert.match(bucket, /^ip:[0-9a-f]{16}:sync$/);
+  });
+
+  it('turli IP — turli bucket (cheklov baribir ishlaydi)', async () => {
+    const [a, b] = await Promise.all([
+      ipBucket(makeRequest('203.0.113.1'), {}, 'sync'),
+      ipBucket(makeRequest('203.0.113.2'), {}, 'sync')
+    ]);
+    assert.notEqual(a, b);
+  });
+
+  it('bir xil IP — bir xil bucket (aks holda cheklov ishlamaydi)', async () => {
+    const [a, b] = await Promise.all([
+      ipBucket(makeRequest('203.0.113.7'), {}, 'chat'),
+      ipBucket(makeRequest('203.0.113.7'), {}, 'chat')
+    ]);
+    assert.equal(a, b);
+  });
+
+  it('tuz o‘zgarsa iz ham o‘zgaradi — hash qaytarib bo‘lmasin', async () => {
+    const [a, b] = await Promise.all([
+      ipBucket(makeRequest('203.0.113.9'), { IP_SALT: 'birinchi' }, 'sync'),
+      ipBucket(makeRequest('203.0.113.9'), { IP_SALT: 'ikkinchi' }, 'sync')
+    ]);
+    assert.notEqual(a, b);
   });
 });

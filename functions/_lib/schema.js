@@ -48,7 +48,15 @@ export const SCHEMA_STATEMENTS = Object.freeze([
      hits INTEGER NOT NULL
    )`,
   `CREATE INDEX IF NOT EXISTS idx_rate_limits_window
-     ON rate_limits(window_start)`
+     ON rate_limits(window_start)`,
+  // Anonim statistika: foydalanuvchi yozuvi emas, faqat kunlik sanoq.
+  // Bu jadvaldagi qatorni birorta odamga bog'lab bo'lmaydi.
+  `CREATE TABLE IF NOT EXISTS stats (
+     day   TEXT NOT NULL,
+     event TEXT NOT NULL,
+     hits  INTEGER NOT NULL DEFAULT 0,
+     PRIMARY KEY (day, event)
+   )`
 ]);
 
 /** Har izolyat uchun bir marta bajariladigan va'da. */
