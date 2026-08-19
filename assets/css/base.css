@@ -72,14 +72,18 @@ select {
   box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 15%, transparent);
 }
 .brand-symbol svg {
-  width: 33px;
-  height: 33px;
-  fill: none;
-  stroke: var(--paper);
-  stroke-width: 2;
+  width: 32px;
+  height: 32px;
 }
-.brand-symbol svg path + path {
-  stroke: var(--accent);
+/* Belgi to'ldirish bilan chiziladi, chiziq bilan emas. Ranglar mavzu
+   tokenlaridan olinadi: `--ink` va `--paper` tungi rejimda o'rin
+   almashadi, shuning uchun belgi ikkala rejimda ham fonga qarama-qarshi
+   turadi. */
+.brand-arc {
+  fill: var(--paper);
+}
+.brand-arc-accent {
+  fill: var(--accent);
 }
 .brand-word {
   transform: translateY(-1px);
@@ -432,10 +436,13 @@ select {
   place-items: center;
 }
 .note-mark svg {
-  width: 35px;
-  fill: none;
-  stroke: var(--paper);
-  stroke-width: 2;
+  width: 34px;
+  height: 34px;
+}
+/* Bu yerda fon allaqachon accent rangda, shuning uchun belgi bitta
+   rangda: diagonal tirqish fonning o'zini ko'rsatadi. */
+.note-mark .brand-arc {
+  fill: var(--paper);
 }
 
 @media (max-width: 950px) {
