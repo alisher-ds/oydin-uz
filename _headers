@@ -15,15 +15,6 @@
 # "Bir daqiqa" brauzerda ishlaydigan embedding modelini yuklaydi:
 # kod jsDelivr'dan, model fayllari Hugging Face'dan keladi, ONNX esa WASM
 # talab qiladi. Kengaytma faqat shu yo'lda amal qiladi.
-/birdaqiqa/*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://cdn.jsdelivr.net https://huggingface.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.hf.co; worker-src 'self' blob:; child-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
-  X-Frame-Options: DENY
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
-
-# Statik aktivlar uzoq muddat keshlanadi (fayl nomi o'zgarganda yangilanadi).
-/assets/*
-  Cache-Control: public, max-age=3600, must-revalidate
 
 /api/*
   Cache-Control: no-store

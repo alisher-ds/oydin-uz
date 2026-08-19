@@ -13,7 +13,7 @@
 import { expect, test } from '@playwright/test';
 import { blockExternalRequests } from './helpers.js';
 
-const PAGES = ['/index.html', '/oqim.html', '/map.html'];
+const PAGES = ['/index.html', '/map.html'];
 
 const withTheme = async (page, theme) => {
   await page.addInitScript(t => localStorage.setItem('oydin-theme', t), theme);
@@ -157,55 +157,5 @@ test.describe('Mobil kenglikda ham qirqilmaydi', () => {
     expect(overflow.widerThanViewport).toBe(false);
     expect(overflow.horizontalScroll).toBe(false);
     expect(overflow.clipped).toBe(0);
-  });
-});
-
-/**
- * "Bir daqiqa" sahifasi jonli saytda o'qib bo'lmas holatda edi: uning CSS'i
- * to'q binafsha fon e'lon qilardi, lekin `theme.js` `body.style` orqali
- * yorug' fonni majburan o'rnatadi va inline uslub CSS'ni bosib ketadi.
- * Natijada deyarli oq matn och krem fonda qolgandi.
- *
- * Bu test fon bilan matn orasidagi kontrastni o'lchaydi — sahifa qaysi
- * tomonga o'zgarsa ham, o'qib bo'lmas holat qaytib kelmaydi.
- */
-test.describe('Bir daqiqa Oydin tizimida', () => {
-  /** WCAG nisbiy yorqinligi. */
-  const luminance = rgb => {
-    const [r, g, b] = rgb.map(v => {
-      const c = v / 255;
-      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-    });
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  };
-
-  const parse = value =>
-    value
-      .match(/\d+(\.\d+)?/g)
-      .slice(0, 3)
-      .map(Number);
-
-  for (const theme of ['light', 'night']) {
-    test(`${theme} rejimda matn fondan yetarlicha ajraladi`, async ({ page }) => {
-      await withTheme(page, theme);
-      await page.goto('/birdaqiqa/index.html');
-      await page.waitForSelector('h1');
-
-      const { bg, fg } = await page.evaluate(() => ({
-        bg: getComputedStyle(document.body).backgroundColor,
-        fg: getComputedStyle(document.querySelector('h1')).color
-      }));
-
-      const light = Math.max(luminance(parse(bg)), luminance(parse(fg)));
-      const dark = Math.min(luminance(parse(bg)), luminance(parse(fg)));
-      const ratio = (light + 0.05) / (dark + 0.05);
-
-      expect(ratio, `kontrast juda past: fon ${bg}, matn ${fg}`).toBeGreaterThan(4.5);
-    });
-  }
-
-  test('logo Oydin belgisini ko‘rsatadi', async ({ page }) => {
-    await page.goto('/birdaqiqa/index.html');
-    await expect(page.locator('.logo .brand-symbol svg .brand-arc')).toBeVisible();
   });
 });

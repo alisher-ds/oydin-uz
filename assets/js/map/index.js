@@ -15,7 +15,7 @@ import { createCardLayer } from './cards.js';
 import { createConnectionLayer } from './connections.js';
 import { createDialogs } from './dialogs.js';
 import { createMobileActions } from './mobile-actions.js';
-import { createInboxPanel } from './inbox-panel.js';
+import { createTezPanel } from './tez-panel.js';
 import { createThinkingLayer } from './thinking.js';
 import { createTools } from './tools.js';
 import { autoLayout, fitToView } from './geometry.js';
@@ -451,17 +451,19 @@ export function initMapPage() {
   });
   $('#railMap')?.addEventListener('click', () => fitView());
 
-  // Kiruvchi: `/tez` da yozilgan fikrlarni shu makonga ko'chiradi.
-  const inbox = createInboxPanel({
+  // Tez yozish: fikrni Makondan chiqmasdan yozib qo'yish va keyin
+  // xohlaganini kartaga aylantirish.
+  const tez = createTezPanel({
     onPlace: text => {
       addCard({ text, type: CARD_TYPES[0], viewportWidth: globalThis.innerWidth || 1200 });
       // `save()` SHART: usiz karta faqat ekranda ko'rinadi, lekin
       // saqlanmaydi va sahifa yangilanishi bilan yo'qoladi.
       save();
       render();
+      return true;
     }
   });
-  inbox.refresh();
+  tez.refresh();
   $('#help')?.addEventListener('click', () => dialogs.openHelp());
 
   $('#zoomIn')?.addEventListener('click', () => camera.zoomBy(0.1));

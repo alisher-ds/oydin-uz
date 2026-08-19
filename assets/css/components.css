@@ -499,3 +499,255 @@ dialog::backdrop {
     flex: 1;
   }
 }
+
+/* ==========================================================================
+   Tez yozish paneli
+   ==========================================================================
+   Ilgari bu alohida "Oqim" sahifasi edi. Sahifa olib tashlandi, lekin
+   KO'RINISHI o'zgarmadi: quyidagi qoidalar `oqim.css` dan aynan
+   ko'chirilgan, faqat selektor prefiksi almashtirilgan.
+   ========================================================================== */
+
+.tez-panel {
+  width: min(620px, calc(100vw - 24px));
+  max-height: 86dvh;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+}
+.tez-panel::backdrop {
+  background: color-mix(in srgb, var(--ink) 45%, transparent);
+}
+.tez-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 18px 8px;
+}
+.tez-panel-head .kicker {
+  margin: 0 0 4px;
+}
+.tez-panel-hint {
+  margin: 0;
+  max-width: 42ch;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.tez-panel-head .dialog-close {
+  position: static;
+  flex: 0 0 auto;
+}
+.tez-panel-capture {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 18px 10px;
+}
+.tez-panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tez-panel-status {
+  margin: 0;
+  min-height: 16px;
+  font: 500 11px var(--font-sans);
+  color: var(--muted);
+}
+.tez-panel-status[data-tone='error'] {
+  color: #9f4c45;
+  font-weight: 700;
+}
+.tez-panel-search {
+  margin: 0 18px 10px;
+}
+.tez-panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 18px calc(18px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+}
+
+/* Qidiruv maydoni — `oqim.css` dan ko'chirilgan. */
+.oqim-search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--panel) 55%, transparent);
+  color: var(--muted);
+}
+.oqim-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.oqim-search:focus-within {
+  border-color: var(--accent);
+}
+
+/* Yon paneldagi hisoblagich. */
+#railTez em {
+  font-style: normal;
+  padding: 1px 7px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+}
+
+.tez-panel .tez-panel-input {
+  display: block;
+  min-height: 118px;
+  padding: 4px 0;
+}
+.tez-panel .tez-panel-input::placeholder {
+  color: var(--muted);
+  opacity: 0.72;
+}
+.tez-panel .oqim-count {
+  position: absolute;
+  right: 18px;
+  bottom: 62px;
+  font:
+    500 10px/1 var(--font-mono),
+    monospace;
+  color: var(--muted);
+  opacity: 0.7;
+}
+.tez-panel .idea-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  padding: 22px 4px;
+  border-top: 1px solid var(--line);
+  transition: background 0.18s ease;
+}
+.tez-panel .idea-row:hover {
+  background: color-mix(in srgb, var(--accent) 3%, transparent);
+}
+.tez-panel .idea-text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.tez-panel .idea-date {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font:
+    500 9px/1.4 var(--font-mono),
+    monospace;
+}
+.tez-panel .idea-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.tez-panel .idea-row:hover .idea-actions,
+.tez-panel .idea-row:focus-within .idea-actions {
+  opacity: 1;
+}
+.tez-panel .idea-edit {
+  width: 100%;
+  min-height: 90px;
+  border: 0;
+  outline: 0;
+  resize: vertical;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.7;
+}
+.tez-panel .idea-row.is-editing {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+.tez-panel .idea-save {
+  margin-top: 10px;
+}
+.tez-panel .oqim-empty {
+  padding: 58px 4px;
+  color: var(--muted);
+  text-align: center;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 650px) {
+  .tez-panel .tez-panel-input {
+    min-height: 110px;
+    font-size: 17px;
+  }
+  .tez-panel .oqim-count {
+    right: 14px;
+    bottom: 58px;
+  }
+  .tez-panel .idea-row {
+    grid-template-columns: 1fr;
+    padding: 20px 2px;
+    gap: 12px;
+  }
+  .tez-panel .idea-actions {
+    opacity: 1;
+    justify-content: flex-start;
+  }
+  .tez-panel .idea-actions .soft-button {
+    min-height: 34px;
+  }
+  .tez-panel .idea-actions .icon-button {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+@media (max-width: 760px) {
+  .tez-panel .oqim-capture,
+  .tez-panel .oqim-search,
+  .tez-panel #ideas,
+  .tez-panel .idea-row {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .tez-panel .idea-text {
+    overflow-wrap: anywhere;
+  }
+  /* Amallar telefonda doim ko'rinsin va barmoqqa mos bo'lsin. */
+  .tez-panel .idea-actions {
+    opacity: 1;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tez-panel .idea-actions .soft-button {
+    flex: 1 1 auto;
+  }
+}
+
+/* Hisoblagich asl sahifada `position: absolute` edi va o'sha sahifaning
+   yozish blokiga nisbatan joylashardi. Panelda u tugma bilan bitta flex
+   qatorda turadi, shuning uchun oqim tartibiga qaytariladi. Shrift va
+   rang o'zgarmaydi. */
+.tez-panel-row .oqim-count {
+  position: static;
+  right: auto;
+  bottom: auto;
+}

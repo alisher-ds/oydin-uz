@@ -20,15 +20,18 @@ const RUNTIME = `${VERSION}-runtime`;
 
 /** Birinchi ochilishdayoq keshlanadigan minimal to'plam. */
 const PRECACHE = [
-  '/tez/',
-  '/assets/css/tez.css',
-  '/assets/js/boot-tez.js',
-  '/assets/js/tez/index.js',
+  '/map.html',
+  '/index.html',
+  '/assets/css/tokens.css',
+  '/assets/css/base.css',
+  '/assets/css/components.css',
+  '/assets/css/map.css',
+  '/assets/js/boot-map.js',
   '/assets/js/core/index.js',
   '/assets/js/core/dom.js',
   '/assets/js/core/events.js',
   '/assets/js/core/storage.js',
-  '/assets/js/core/inbox.js',
+  '/assets/js/core/notes.js',
   '/assets/js/core/theme.js',
   '/assets/js/core/pwa.js',
   '/favicon.svg',
@@ -81,7 +84,7 @@ const networkFirst = async request => {
     }
     return response;
   } catch {
-    const cached = (await caches.match(request)) ?? (await caches.match('/tez/'));
+    const cached = (await caches.match(request)) ?? (await caches.match('/map.html'));
     if (cached) return cached;
     return new Response('Oflayn — bu sahifa hali keshlanmagan.', {
       status: 503,

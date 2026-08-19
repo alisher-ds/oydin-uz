@@ -18,6 +18,7 @@ const MOBILE_QUERY = '(max-width: 760px)';
 
 /** Varaqqa ko'chiriladigan amallar: mavjud tugma id'si → yorliq. */
 const ACTIONS = [
+  { id: 'railTez', glyph: '✎', label: 'Tez yozish' },
   { id: 'railNotes', glyph: '≡', label: 'Barcha yozuvlar' },
   { id: 'autoLayout', glyph: '⌗', label: 'Avtomatik joylash' },
   { id: 'historyUndo', glyph: '↶', label: 'Bekor qilish' },
