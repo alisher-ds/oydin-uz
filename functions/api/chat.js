@@ -18,8 +18,43 @@ import { checkLimit, guard, json } from '../_lib/guard.js';
 import { ensureSchema } from '../_lib/schema.js';
 import { hashToken, isValidToken } from '../_lib/vault.js';
 
-/** Birinchisi asosiy; topilmasa keyingisiga o'tamiz. */
-const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.0-flash-lite', 'gemini-2.0-flash'];
+/**
+ * Model nomlari vaqt o'tishi bilan eskiradi — Google ularni to'xtatadi va
+ * ilova sekin-asta "javob bermaydigan" holga tushadi. Aynan shu bo'ldi:
+ * gemini-2.5-flash-lite "no longer available to new users" deb qaytardi.
+ *
+ * Shuning uchun ro'yxat endi yakuniy haqiqat emas, faqat afzal ko'rilgan
+ * tartib. Agar hammasi yiqilsa, mavjud modellar Google'ning o'zidan
+ * so'raladi va ishlaydigani tanlanadi. Ya'ni keyingi safar model
+ * to'xtatilganda ilova o'zini o'zi tuzatadi.
+ */
+const PREFERRED_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+
+/** Suhbatga yaramaydigan modellar (rasm, ovoz, embedding va h.k.). */
+const UNUSABLE = /embedding|imagen|veo|tts|aqa|audio|image|live/i;
+
+/**
+ * Modelning o'zi yo'qligini bildiruvchi xato. Buni sxema xatosidan ajratish
+ * SHART: ikkalasi ham 400 qaytaradi, lekin sxema xatosida oddiy matn rejimi
+ * yordam beradi, model yo'q bo'lsa — yo'q. Ajratmasak, "tuzilgan javob
+ * ishlamasa oddiy matnga tush" zaxirasi butunlay o'lik qoladi.
+ */
+const MODEL_GONE =
+  /no longer available|not found|does not exist|unsupported model|not supported for/i;
+
+/**
+ * Isolate ichida saqlanadi: oxirgi ishlagan model va topilgan ro'yxat.
+ * Alohida o'zgaruvchilar emas, bitta obyekt — chunki qiymat `await` dan
+ * oldin o'qilib, keyin yoziladi va parallel so'rovlar bir-birining
+ * natijasini bosib ketmasligi kerak.
+ */
+const cache = { knownGood: null, discovered: null };
+
+/** Faqat testlar uchun: isolate keshini tozalaydi. */
+export function __resetModelCache() {
+  cache.knownGood = null;
+  cache.discovered = null;
+}
 
 const MAX_TURNS = 16;
 const MAX_TURN_CHARS = 1800;
@@ -112,39 +147,101 @@ async function callGemini(key, model, prompt, { structured }) {
   return { ok: true, reply: text, model };
 }
 
+/** Yangiroq va arzonroq model yuqori ball oladi. */
+function scoreModel(name) {
+  const version = Number(/gemini-(\d+(?:\.\d+)?)/.exec(name)?.[1] ?? 0);
+  let family = 0;
+  if (/flash-lite/.test(name)) family = 3;
+  else if (/flash/.test(name)) family = 2;
+  else if (/pro/.test(name)) family = 1;
+  const stable = /preview|exp/.test(name) ? 0 : 1;
+  return stable * 1000 + family * 100 + version * 10;
+}
+
+/** Google'dan `generateContent` qo'llaydigan modellar ro'yxatini oladi. */
+async function discoverModels(key) {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}&pageSize=200`
+    );
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    const names = (Array.isArray(data?.models) ? data.models : [])
+      .filter(model => model?.supportedGenerationMethods?.includes?.('generateContent'))
+      .map(model => String(model?.name ?? '').replace(/^models\//, ''))
+      .filter(name => name && !UNUSABLE.test(name));
+
+    names.sort((a, b) => scoreModel(b) - scoreModel(a));
+    // Keshni shu yerda yozamiz: bu funksiya keshni o'qimaydi, shuning uchun
+    // `await` atrofida eskirgan qiymat ustiga yozish xavfi yo'q.
+    cache.discovered = names.slice(0, 4);
+    return cache.discovered;
+  } catch (error) {
+    console.error('Model ro‘yxatini olib bo‘lmadi:', error);
+    return [];
+  }
+}
+
 /**
  * Modellar va rejimlar bo'ylab urinib ko'radi.
  * Har bir muvaffaqiyatsizlik sababi saqlanadi, oxirida eng foydalisi qaytadi.
  */
 async function generateReply(key, prompt) {
   const failures = [];
+  const tried = new Set();
+  let fatal = null;
 
-  for (const model of MODELS) {
-    for (const structured of [true, false]) {
-      const result = await callGemini(key, model, prompt, { structured });
-      if (result.ok) return result;
+  const attempt = async candidates => {
+    for (const model of candidates) {
+      if (!model || tried.has(model)) continue;
+      tried.add(model);
 
-      failures.push(`${model}${structured ? '' : ' (oddiy matn)'}: ${result.reason}`);
-      console.error(
-        'Gemini:',
-        model,
-        structured ? 'structured' : 'plain',
-        result.status,
-        result.reason
-      );
+      for (const structured of [true, false]) {
+        const result = await callGemini(key, model, prompt, { structured });
+        if (result.ok) {
+          cache.knownGood = model;
+          return result;
+        }
 
-      // 401/403 — kalit muammosi; boshqa modelni sinash ma'nosiz.
-      if (result.status === 401 || result.status === 403) {
-        return { ok: false, status: result.status, reason: result.reason, failures };
+        failures.push(`${model}${structured ? '' : ' (oddiy matn)'}: ${result.reason}`);
+        console.error(
+          'Gemini:',
+          model,
+          structured ? 'structured' : 'plain',
+          result.status,
+          result.reason
+        );
+
+        if (cache.knownGood === model) cache.knownGood = null;
+
+        // 401/403 — kalit muammosi; 429 — kvota. Boshqa modelni sinash
+        // ma'nosiz, chunki sabab modelda emas.
+        if (result.status === 401 || result.status === 403 || result.status === 429) {
+          fatal = { ok: false, status: result.status, reason: result.reason, failures };
+          return null;
+        }
+        // Model yo'q yoki to'xtatilgan — rejimni almashtirish yordam bermaydi.
+        // Boshqa 400 (masalan sxema xatosi) esa oddiy matn rejimida tuzalishi
+        // mumkin, shuning uchun uni to'xtatmaymiz.
+        if (result.status === 404 || (result.status === 400 && MODEL_GONE.test(result.reason))) {
+          break;
+        }
       }
-      // 429 — kvota; darhol qaytamiz.
-      if (result.status === 429) {
-        return { ok: false, status: 429, reason: result.reason, failures };
-      }
-      // 404 — model yo'q; rejimni almashtirish yordam bermaydi.
-      if (result.status === 404) break;
     }
-  }
+    return null;
+  };
+
+  const first = await attempt([cache.knownGood, ...PREFERRED_MODELS, ...(cache.discovered ?? [])]);
+  if (first) return first;
+  if (fatal) return fatal;
+
+  // Ma'lum modellarning hammasi yiqildi — ro'yxatni Google'dan yangilaymiz.
+  // (`discoverModels` keshni o'zi yangilaydi.)
+  const second = await attempt(await discoverModels(key));
+  if (second) return second;
+  if (fatal) return fatal;
+
   return { ok: false, status: 502, reason: failures[0] ?? 'noma’lum', failures };
 }
 

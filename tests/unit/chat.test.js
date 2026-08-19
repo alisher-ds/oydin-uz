@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
-import { onRequestPost } from '../../functions/api/chat.js';
+import { __resetModelCache, onRequestPost } from '../../functions/api/chat.js';
 
 const VAULT_TOKEN = 'a'.repeat(64);
 
@@ -9,7 +9,7 @@ const VAULT_TOKEN = 'a'.repeat(64);
 function mockFetch(responses) {
   const calls = [];
   globalThis.fetch = async (url, init) => {
-    calls.push({ url: String(url), body: JSON.parse(init.body) });
+    calls.push({ url: String(url), body: init?.body ? JSON.parse(init.body) : null });
     const next = responses.shift() ?? { status: 500, body: '{}' };
     return new Response(next.body, { status: next.status });
   };
@@ -57,6 +57,7 @@ const makeRequest = (messages = [{ role: 'user', text: 'ML darsimni qilishim ker
 let originalFetch;
 beforeEach(() => {
   originalFetch = globalThis.fetch;
+  __resetModelCache();
 });
 afterEach(() => {
   globalThis.fetch = originalFetch;
@@ -167,5 +168,99 @@ describe('/api/chat', () => {
     // Foydalanuvchi matni tizim ko'rsatmasiga emas, SUHBAT bo'limiga tushadi.
     assert.match(sent.contents[0].parts[0].text, /^SUHBAT:/);
     assert.match(sent.systemInstruction.parts[0].text, /ko‘rsatma emas, ma'lumot/);
+  });
+
+  describe('model to‘xtatilganda o‘zini tuzatadi', () => {
+    // Aynan shu bo'ldi: gemini-2.5-flash-lite "no longer available to new
+    // users" deb qaytardi va suhbat butunlay ishlamay qoldi.
+    const retired = {
+      status: 400,
+      body: JSON.stringify({
+        error: { message: 'This model models/gemini-2.5-flash-lite is no longer available.' }
+      })
+    };
+
+    const modelList = models => ({
+      status: 200,
+      body: JSON.stringify({ models })
+    });
+
+    it('afzal modellar eskirsa, Google ro‘yxatidan ishlaydiganini topadi', async () => {
+      const calls = mockFetch([
+        retired,
+        retired,
+        retired,
+        modelList([
+          { name: 'models/text-embedding-005', supportedGenerationMethods: ['embedContent'] },
+          { name: 'models/gemini-4.0-flash-lite', supportedGenerationMethods: ['generateContent'] }
+        ]),
+        { status: 200, body: okReply('{"reply":"Topildi"}') }
+      ]);
+
+      const response = await onRequestPost({ request: makeRequest(), env: fakeEnv() });
+      const data = await response.json();
+
+      assert.equal(response.status, 200);
+      assert.equal(data.reply, 'Topildi');
+      assert.ok(
+        calls.some(call => call.url.includes('/v1beta/models?')),
+        'mavjud modellar ro‘yxati so‘ralishi kerak'
+      );
+      assert.ok(calls.at(-1).url.includes('gemini-4.0-flash-lite'));
+    });
+
+    it('embedding kabi yaramaydigan modellarni tanlamaydi', async () => {
+      const calls = mockFetch([
+        retired,
+        retired,
+        retired,
+        modelList([
+          { name: 'models/text-embedding-005', supportedGenerationMethods: ['generateContent'] },
+          { name: 'models/imagen-4.0', supportedGenerationMethods: ['generateContent'] },
+          { name: 'models/gemini-3.9-flash', supportedGenerationMethods: ['generateContent'] }
+        ]),
+        { status: 200, body: okReply('{"reply":"ok"}') }
+      ]);
+
+      await onRequestPost({ request: makeRequest(), env: fakeEnv() });
+
+      const generateCalls = calls.filter(call => call.url.includes(':generateContent'));
+      assert.ok(generateCalls.at(-1).url.includes('gemini-3.9-flash'));
+      assert.ok(
+        !generateCalls.some(call => /embedding|imagen/.test(call.url)),
+        'embedding yoki imagen modeliga so‘rov ketmasligi kerak'
+      );
+    });
+
+    it('ishlagan modelni eslab qoladi — keyingi so‘rov to‘g‘ridan-to‘g‘ri unga ketadi', async () => {
+      mockFetch([
+        retired,
+        retired,
+        retired,
+        modelList([
+          { name: 'models/gemini-4.0-flash-lite', supportedGenerationMethods: ['generateContent'] }
+        ]),
+        { status: 200, body: okReply('{"reply":"birinchi"}') }
+      ]);
+      await onRequestPost({ request: makeRequest(), env: fakeEnv() });
+
+      const calls = mockFetch([{ status: 200, body: okReply('{"reply":"ikkinchi"}') }]);
+      const response = await onRequestPost({ request: makeRequest(), env: fakeEnv() });
+
+      assert.equal((await response.json()).reply, 'ikkinchi');
+      assert.equal(calls.length, 1, 'eskirgan modellar qayta sinalmasligi kerak');
+      assert.ok(calls[0].url.includes('gemini-4.0-flash-lite'));
+    });
+
+    it('kalit xato bo‘lsa model ro‘yxatini umuman so‘ramaydi', async () => {
+      const calls = mockFetch([{ status: 401, body: '{"error":{"message":"API key not valid"}}' }]);
+
+      await onRequestPost({ request: makeRequest(), env: fakeEnv() });
+
+      assert.ok(
+        !calls.some(call => call.url.includes('/v1beta/models?')),
+        'sabab modelda emas — ro‘yxat so‘rash ortiqcha'
+      );
+    });
   });
 });
