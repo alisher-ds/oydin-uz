@@ -4,7 +4,7 @@
   "description": "Fikrlarni yozish, bog‘lash va ko‘rish uchun vizual makon.",
   "lang": "uz",
   "dir": "ltr",
-  "start_url": "/tez/",
+  "start_url": "/map.html",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
@@ -22,15 +22,9 @@
   ],
   "shortcuts": [
     {
-      "name": "Yangi fikr",
-      "short_name": "Fikr",
-      "description": "To‘g‘ridan-to‘g‘ri yozish maydonini ochadi",
-      "url": "/tez/",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
-    },
-    {
       "name": "Makon",
       "short_name": "Makon",
+      "description": "Fikrlar makonini ochadi",
       "url": "/map.html",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }

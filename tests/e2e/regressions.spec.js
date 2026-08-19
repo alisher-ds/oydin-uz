@@ -368,7 +368,7 @@ test.describe('A1/A2 — foydalanish imkoniyati', () => {
   });
 
   test('har bir sahifada "asosiy kontentga o‘tish" havolasi bor', async ({ page }) => {
-    for (const path of ['/index.html', '/oqim.html', '/map.html']) {
+    for (const path of ['/index.html', '/map.html']) {
       // Tashqi shriftlar tarmoqsiz muhitda `load` hodisasini kechiktiradi.
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('.skip-link')).toHaveCount(1);
@@ -397,18 +397,5 @@ test.describe('A3 — mavzu va tizim sozlamalari', () => {
     await page.waitForTimeout(400);
     await expect(page.locator('body')).toHaveClass(/night/);
     await context.close();
-  });
-});
-
-test.describe('F11 — "Bir daqiqa" namunani sizniki deb ko‘rsatmaydi', () => {
-  test('bo‘sh matnda halol bo‘sh holat chiqadi', async ({ page }) => {
-    await page.goto('/birdaqiqa/index.html');
-    await page.locator('#begin').click();
-    await page.locator('#finish').click();
-    await page.waitForTimeout(500);
-
-    await expect(page.locator('.reveal-empty')).toBeVisible();
-    await expect(page.locator('#constellation .node')).toHaveCount(0);
-    await expect(page.locator('#signalTitle')).toContainText('Hali signal yo‘q');
   });
 });

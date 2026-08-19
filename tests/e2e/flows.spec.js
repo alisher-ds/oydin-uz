@@ -158,48 +158,80 @@ test.describe('Makon: asosiy oqim', () => {
   });
 });
 
-test.describe('Oqim sahifasi', () => {
+/**
+ * Tez yozish — ilgari alohida "Oqim" sahifasi edi, endi Makon ichidagi
+ * panel. Sahifa olib tashlandi, lekin IMKONIYATLARI to'liq saqlanishi
+ * kerak: qo'shish, qidirish, tahrirlash, Makonga ko'chirish.
+ */
+test.describe('Tez yozish paneli', () => {
+  const openPanel = async page => {
+    await page.goto('/map.html');
+    await page.waitForTimeout(400);
+    await page.locator('#railTez').click();
+    await expect(page.locator('#tezPanel')).toBeVisible();
+  };
+
   test('fikr yozish, qidirish va Makonga ko‘chirish', async ({ page }) => {
     const errors = collectErrors(page);
-    await page.goto('/oqim.html');
-    await page.waitForTimeout(300);
+    await openPanel(page);
 
-    await page.locator('#ideaInput').fill('Ertaga vazifani tugatish');
-    await page.locator('#saveIdea').click();
-    await page.locator('#ideaInput').fill('Ingliz tilini o‘rganish');
-    await page.locator('#saveIdea').click();
+    await page.locator('#tezInput').fill('Ertaga vazifani tugatish');
+    await page.locator('#tezPanel .primary-button').first().click();
+    await page.locator('#tezInput').fill('Ingliz tilini o‘rganish');
+    await page.locator('#tezPanel .primary-button').first().click();
     await expect(page.locator('.idea-row')).toHaveCount(2);
 
-    await page.locator('#oqimSearch').fill('ingliz');
+    await page.locator('#tezSearch').fill('ingliz');
     await expect(page.locator('.idea-row')).toHaveCount(1);
-    await page.locator('#oqimSearch').fill('');
+    await page.locator('#tezSearch').fill('');
     await expect(page.locator('.idea-row')).toHaveCount(2);
 
-    await page.locator('.idea-row').first().locator('[class*="soft-button"]').click();
-    await page.waitForTimeout(400);
+    // Makonga ko'chirish: ro'yxatdan chiqadi va kartaga aylanadi.
+    await page.locator('.idea-row').first().locator('.soft-button').click();
     await expect(page.locator('.idea-row')).toHaveCount(1);
 
-    await page.goto('/map.html');
-    await page.waitForTimeout(700);
+    await page.locator('#tezPanel .dialog-close').click();
+    await expect(page.locator('.thought-card')).toHaveCount(1);
+
+    // Sahifa yangilangandan keyin ham turadi.
+    await page.reload();
+    await page.waitForTimeout(600);
     await expect(page.locator('.thought-card')).toHaveCount(1);
 
     expect(errors, `konsol xatolari: ${errors.join(' | ')}`).toEqual([]);
   });
 
   test('fikrni tahrirlash saqlanadi', async ({ page }) => {
-    await page.goto('/oqim.html');
-    await page.locator('#ideaInput').fill('Boshlang‘ich matn');
-    await page.locator('#saveIdea').click();
+    await openPanel(page);
+    await page.locator('#tezInput').fill('Boshlang‘ich matn');
+    await page.locator('#tezPanel .primary-button').first().click();
 
     await page.locator('.idea-row [aria-label="Fikrni tahrirlash"]').click();
     await page.locator('.idea-edit').fill('Yangilangan matn');
-    // Tugma qoplanmaganini brauzerning o‘zida tekshirib, so‘ng bosamiz.
     await clickHitTested(page, '.idea-save');
     await expect(page.locator('.idea-text')).toHaveText('Yangilangan matn');
 
     await page.reload();
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(500);
+    await page.locator('#railTez').click();
     await expect(page.locator('.idea-text')).toHaveText('Yangilangan matn');
+  });
+
+  test('eski "Oqim" ma’lumoti yo‘qolmaydi', async ({ page }) => {
+    // Kalit o'zgarmadi (`oydin-oqim`), lekin buni test bilan
+    // mustahkamlaymiz: foydalanuvchining eski fikrlari ko'rinishi shart.
+    await page.goto('/map.html');
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'oydin-oqim',
+        JSON.stringify([{ id: 'eski1', text: 'Eski fikr', createdAt: '2026-01-01T00:00:00.000Z' }])
+      );
+    });
+    await page.reload();
+    await page.waitForTimeout(400);
+
+    await page.locator('#railTez').click();
+    await expect(page.locator('.idea-text')).toHaveText('Eski fikr');
   });
 });
 
