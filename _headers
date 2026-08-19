@@ -12,9 +12,5 @@
   Cross-Origin-Opener-Policy: same-origin
   Strict-Transport-Security: max-age=31536000; includeSubDomains
 
-# "Bir daqiqa" brauzerda ishlaydigan embedding modelini yuklaydi:
-# kod jsDelivr'dan, model fayllari Hugging Face'dan keladi, ONNX esa WASM
-# talab qiladi. Kengaytma faqat shu yo'lda amal qiladi.
-
 /api/*
   Cache-Control: no-store

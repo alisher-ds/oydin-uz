@@ -39,6 +39,41 @@ export function clientIp(request) {
 }
 
 /**
+ * Rate limiting uchun IP'ning qaytarib bo'lmaydigan izi.
+ *
+ * Ilgari `rate_limits.bucket` ustunida OCHIQ IP manzil turardi
+ * (`ip:1.2.3.4:chat`). Bu Oydin'ning asosiy va'dasiga — server hech
+ * qanday shaxsiy ma'lumot saqlamasligiga — zid edi.
+ *
+ * Endi u yerda SHA-256 izining bir qismi turadi. Iz kunlik tuz bilan
+ * hisoblanadi, ya'ni bugungi va kechagi izni bir-biriga bog'lab
+ * bo'lmaydi. IPv4 fazosi kichik (2^32) bo'lgani uchun tuzsiz hash
+ * qaytariladigan bo'lardi — shuning uchun `IP_SALT` maxfiysini
+ * o'rnatish tavsiya etiladi:
+ *
+ *     npx wrangler pages secret put IP_SALT
+ *
+ * U o'rnatilmasa ham kunlik aylanish va `rate_limits` ning tez
+ * tozalanishi (4 oyna) ta'sirni juda kichik qoldiradi.
+ */
+export async function ipBucket(request, env, scope) {
+  const ip = clientIp(request);
+  const day = new Date().toISOString().slice(0, 10);
+  const material = `${env?.IP_SALT ?? 'oydin'}|${day}|${ip}`;
+
+  try {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(material));
+    const hex = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0'))
+      .join('')
+      .slice(0, 16);
+    return `ip:${hex}:${scope}`;
+  } catch {
+    // WebCrypto yo'q bo'lsa cheklov baribir ishlashi kerak.
+    return `ip:${ip}:${scope}`;
+  }
+}
+
+/**
  * Cross-site so'rovlarni rad etadi.
  *
  * `Origin` yo'q bo'lishi ikki xil holatni anglatishi mumkin: (a) brauzerdan
@@ -210,8 +245,7 @@ export async function guard(request, env, options = {}) {
     }
   }
 
-  const ip = clientIp(request);
-  const result = await checkLimit(env, `ip:${ip}:${scope}`, limit, windowSeconds);
+  const result = await checkLimit(env, await ipBucket(request, env, scope), limit, windowSeconds);
   if (!result.ok) {
     return {
       response: json({ error: 'Too many requests. Please try again shortly.' }, 429, {
@@ -220,8 +254,10 @@ export async function guard(request, env, options = {}) {
     };
   }
 
+  // DIQQAT: bu yerdan `ip` ATAYLAB qaytarilmaydi. Ilgari qaytarilardi va
+  // hech kim ishlatmasdi — lekin mavjud bo'lgani uchun uni tasodifan
+  // log'ga yoki bazaga yozib qo'yish oson edi.
   return {
-    ip,
     readJson: async () => {
       const text = await request.text();
       // Content-Length yo'q bo'lishi mumkin (chunked) — haqiqiy hajmni ham tekshiramiz.

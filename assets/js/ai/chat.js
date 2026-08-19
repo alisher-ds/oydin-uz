@@ -7,6 +7,7 @@
 
 import { $, EVENTS, el, on } from '../core/index.js';
 import { getToken, sync } from '../sync/client.js';
+import { track } from '../core/stat.js';
 
 const STORAGE_KEY = 'oydin-ai-chat-v1';
 const MAX_MESSAGES = 16;
@@ -118,6 +119,7 @@ export function initChat() {
     if (!text) return;
 
     messages.push({ role: 'user', text });
+    track('ai');
     messages = messages.slice(-MAX_MESSAGES);
     persist(messages);
     render();
