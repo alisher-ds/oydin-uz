@@ -11,7 +11,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { blockExternalRequests } from './helpers.js';
+import { blockExternalRequests, skipTour } from './helpers.js';
 
 const PAGES = ['/index.html', '/map.html'];
 
@@ -21,6 +21,7 @@ const withTheme = async (page, theme) => {
 
 test.beforeEach(async ({ page }) => {
   await blockExternalRequests(page);
+  await skipTour(page);
 });
 
 test.describe('Umumiy komponentlar har bir sahifada uslubga ega', () => {
@@ -87,6 +88,7 @@ test.describe('Tungi rejim', () => {
       const ctx = await browser.newContext();
       const page = await ctx.newPage();
       await blockExternalRequests(page);
+      await skipTour(page);
       await withTheme(page, theme);
       await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(900);

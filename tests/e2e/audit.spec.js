@@ -9,6 +9,7 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { skipTour } from './helpers.js';
 
 const results = [];
 const check = async (name, fn) => {
@@ -19,6 +20,10 @@ const check = async (name, fn) => {
     results.push(`❌ ${name} — ${String(e).split('\n')[0].slice(0, 110)}`);
   }
 };
+
+test.beforeEach(async ({ page }) => {
+  await skipTour(page);
+});
 
 test('to‘liq funksional tekshiruv', async ({ page }) => {
   const errors = [];

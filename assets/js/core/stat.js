@@ -36,7 +36,10 @@ export const STAT_EVENTS = Object.freeze([
   'recall:korsatildi',
   'recall:qabul',
   'recall:yopildi',
-  'ai'
+  'ai',
+  'qollanma:boshlandi',
+  'qollanma:tugadi',
+  'qollanma:otkazildi'
 ]);
 
 const KNOWN = new Set(STAT_EVENTS);

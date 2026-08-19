@@ -8,7 +8,7 @@
  * funksiyani birdan o'ldirgan edi.
  */
 
-import { $, $$, EVENTS, hasOpenDialog, isTypingTarget, on } from '../core/index.js';
+import { $, $$, EVENTS, el, hasOpenDialog, isTypingTarget, on } from '../core/index.js';
 import { initTheme } from '../core/theme.js';
 import { track } from '../core/stat.js';
 import { createCamera } from './camera.js';
@@ -18,6 +18,16 @@ import { createDialogs } from './dialogs.js';
 import { createMobileActions } from './mobile-actions.js';
 import { createTezPanel } from './tez-panel.js';
 import { createRecallBar } from './recall-bar.js';
+import { createSaveBadge } from './save-badge.js';
+import { showToast } from './toast.js';
+import { createTour } from './tour.js';
+import {
+  dismissBackupNotice,
+  noteBackup,
+  noteFirstSeen,
+  readBackupState,
+  shouldRemind
+} from '../core/backup-notice.js';
 import { createThinkingLayer } from './thinking.js';
 import { createTools } from './tools.js';
 import { autoLayout, fitToView } from './geometry.js';
@@ -46,6 +56,7 @@ import {
   setSpace,
   setTitle,
   switchMap,
+  redo,
   undo,
   updateCard
 } from './state.js';
@@ -61,22 +72,56 @@ export function initMapPage() {
 
   let connectingFrom = null;
   let selectedConnection = null;
-  let statusTimer = 0;
 
   /* --------------------------------- holat --------------------------------- */
 
-  function setStatus(text, tone = 'ok') {
-    const node = $('#saveStatus');
-    if (!node) return;
-    node.textContent = text;
-    node.dataset.tone = tone;
-    clearTimeout(statusTimer);
-    if (tone === 'ok') {
-      statusTimer = setTimeout(() => {
-        node.textContent = 'saqlandi';
-        node.dataset.tone = 'ok';
-      }, 2200);
-    }
+  // Saqlash holati endi alohida modulda: u sinxronizatsiya va oflayn
+  // hodisalarini ham eshitadi, `setStatus` esa uning ustidan yozadi.
+  const saveBadge = createSaveBadge();
+  const setStatus = (text, tone = 'ok') => saveBadge.set(text, tone);
+
+  /** Zaxira eslatmasini chizadi (kerak bo'lsa). */
+  function showBackupNotice() {
+    const host = $('#backupNotice');
+    if (!host) return;
+
+    const hasData = cards().length > 0 || Object.keys(allMaps()).length > 1;
+    if (!shouldRemind({ ...readBackupState(), hasData })) return;
+
+    const close = () => {
+      dismissBackupNotice();
+      host.hidden = true;
+      host.replaceChildren();
+    };
+
+    host.replaceChildren(
+      el('div', {}, [
+        el('b', { text: 'Ma’lumotingiz faqat shu qurilmada.' }),
+        el('span', {
+          text: ' Brauzer tozalansa yoki qurilma yo‘qolsa, fikrlar ham ketadi.'
+        })
+      ]),
+      el('div', { class: 'backup-actions' }, [
+        el('button', {
+          type: 'button',
+          class: 'soft-button',
+          text: 'Zaxira olish',
+          onclick: () => {
+            tools.exportAll();
+            noteBackup();
+            close();
+          }
+        }),
+        el('button', {
+          type: 'button',
+          class: 'icon-button',
+          'aria-label': 'Yopish',
+          text: '×',
+          onclick: close
+        })
+      ])
+    );
+    host.hidden = false;
   }
 
   /**
@@ -222,6 +267,18 @@ export function initMapPage() {
         if (undo()) {
           setStatus('bekor qilindi');
           loadMap();
+          showToast('Bekor qilindi.', { hint: 'Qaytarish: Ctrl+Shift+Z' });
+        } else {
+          showToast('Bekor qilinadigan amal yo‘q.');
+        }
+      },
+      onRedo: () => {
+        if (redo()) {
+          setStatus('qaytarildi');
+          loadMap();
+          showToast('Qaytarildi.', { hint: 'Bekor qilish: Ctrl+Z' });
+        } else {
+          showToast('Qaytariladigan amal yo‘q.');
         }
       },
       onReveal: id => {
@@ -578,6 +635,27 @@ export function initMapPage() {
   // Telefonda ortiqcha tugmalarni ixcham varaqqa yig'amiz.
   createMobileActions();
   loadMap();
+
+  // Qisqa qo'llanma. O'zi FAQAT birinchi tashrifda ochiladi; keyin
+  // Yordam oynasidagi tugma orqali. `loadMap()` dan keyin — qadamlar
+  // haqiqiy elementlarni yoritadi, ular esa shu paytga chizilgan
+  // bo'lishi kerak.
+  // Zaxira eslatmasi: ma'lumot bir haftadan beri qurilmadan chiqmagan
+  // bo'lsa — BIR MARTA. Qoidalar `core/backup-notice.js` da.
+  noteFirstSeen();
+  on(globalThis, EVENTS.sync, event => {
+    if (event.detail?.state === 'ok') noteBackup();
+  });
+  showBackupNotice();
+
+  const tour = createTour();
+  $('#replayTour')?.addEventListener('click', () => {
+    $('#helpDialog')?.close();
+    tour.start();
+  });
+  tour.startIfFirstVisit({
+    hasExistingWork: cards().length > 0 || Object.keys(allMaps()).length > 1
+  });
   requestAnimationFrame(fitView);
 
   return { camera, render, loadMap, fitView, save };

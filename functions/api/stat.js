@@ -47,7 +47,10 @@ export const ALLOWED_EVENTS = Object.freeze([
   'recall:korsatildi',
   'recall:qabul',
   'recall:yopildi',
-  'ai' // AI suhbatiga savol yuborildi
+  'ai', // AI suhbatiga savol yuborildi
+  'qollanma:boshlandi', // birinchi kirgan odamga ko'rsatiladigan qo'llanma
+  'qollanma:tugadi',
+  'qollanma:otkazildi'
 ]);
 
 const ALLOWED = new Set(ALLOWED_EVENTS);

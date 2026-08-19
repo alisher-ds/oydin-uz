@@ -12,7 +12,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { blockExternalRequests } from './helpers.js';
+import { blockExternalRequests, skipTour } from './helpers.js';
 
 /** Ruxsat etilgan hodisalar — `functions/api/stat.js` bilan bir xil. */
 const ALLOWED = new Set([
@@ -59,6 +59,7 @@ const settle = page => page.waitForTimeout(900);
 
 test.beforeEach(async ({ page }) => {
   await blockExternalRequests(page);
+  await skipTour(page);
 });
 
 test.describe('Anonim statistika', () => {

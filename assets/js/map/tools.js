@@ -165,7 +165,17 @@ export function createTools({ handlers }) {
 
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
       event.preventDefault();
-      handlers.onUndo?.();
+      // Shift bilan — oldinga. `event.key` katta harf ('Z') bo'lgani
+      // uchun `toLowerCase()` ikkalasini ham ushlaydi, farqni aynan
+      // `shiftKey` ajratadi.
+      if (event.shiftKey) handlers.onRedo?.();
+      else handlers.onUndo?.();
+      return;
+    }
+    // Windows'dagi an'anaviy "oldinga" qisqartmasi.
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') {
+      event.preventDefault();
+      handlers.onRedo?.();
       return;
     }
     if (hasOpenDialog()) return;

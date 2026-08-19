@@ -1,8 +1,8 @@
 /**
  * Oydin service worker.
  *
- * Maqsad — tezlik. `/tez` sahifasi keshdan ochilsa, foydalanuvchi tarmoqni
- * umuman kutmaydi: ikonkani bosdi — kursor turibdi.
+ * Maqsad — tezlik. Makon keshdan ochilsa, foydalanuvchi tarmoqni umuman
+ * kutmaydi: ikonkani bosdi — sahifa turibdi.
  *
  * Strategiya ikki xil:
  *  - navigatsiya (HTML): avval tarmoq, u ishlamasa kesh. Shunda yangi
@@ -14,7 +14,10 @@
  * ma'lumot va eski javob zarar keltiradi.
  */
 
-const VERSION = 'oydin-v1';
+// Versiya o'zgarsa `activate` eski keshlarni tozalaydi. Uslub yoki
+// modullar jiddiy o'zgarganda ko'tariladi — aks holda qaytgan
+// foydalanuvchi yangi imkoniyatlarni bir yuklanish kechikib ko'radi.
+const VERSION = 'oydin-v2';
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 
@@ -35,6 +38,8 @@ const PRECACHE = [
   '/assets/js/core/theme.js',
   '/assets/js/core/pwa.js',
   '/assets/js/core/stat.js',
+  '/assets/js/core/recall.js',
+  '/assets/js/core/backup-notice.js',
   '/favicon.svg',
   '/manifest.webmanifest'
 ];
