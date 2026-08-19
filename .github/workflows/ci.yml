@@ -41,7 +41,8 @@ jobs:
   e2e:
     name: Brauzer testlari
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Uch urinish (3 x 6 daq) + testlar uchun joy.
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v5
 
@@ -53,8 +54,43 @@ jobs:
       - name: Bog'liqliklarni o'rnatish
         run: npm ci
 
+      - name: Playwright versiyasini aniqlash
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Brauzer keshi
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      # Yuklab olish Playwright CDN'iga bog'liq va u ba'zan javob bermay
+      # qoladi. Har bir urinish 6 daqiqa bilan cheklangan, uch marta
+      # urinamiz — shunda vaqtinchalik uzilish butun CI ni to'xtatmaydi.
       - name: Chromium o'rnatish
-        run: npx playwright install --with-deps chromium
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 20
+        run: |
+          for attempt in 1 2 3; do
+            echo "::group::Chromium — urinish $attempt"
+            if timeout 360 npx playwright install --with-deps chromium; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            echo "Urinish $attempt muvaffaqiyatsiz tugadi."
+            sleep 15
+          done
+          echo "Chromium uch urinishda ham o'rnatilmadi."
+          exit 1
+
+      # Kesh topilganda brauzer allaqachon bor — faqat tizim kutubxonalari
+      # kerak, bu esa bir necha soniya.
+      - name: Tizim kutubxonalari
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        timeout-minutes: 10
+        run: npx playwright install-deps chromium
 
       - name: Playwright testlari
         run: npm run test:e2e
