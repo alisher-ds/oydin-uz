@@ -49,7 +49,9 @@ async function runSync({ keepalive = false } = {}) {
 
   try {
     const token = getToken();
-    const spaces = normalizeList(readJson('oydin-maps', {})).slice(0, MAX_SPACES);
+        const spaces = normalizeList(readJson('oydin-maps', {}))
+      .sort((a, b) => String(b.updatedAt ?? '').localeCompare(String(a.updatedAt ?? '')))
+      .slice(0, MAX_SPACES);
     const deleted = readJson('oydin-deleted-maps-v1', {}) ?? {};
 
     const headers = { 'content-type': 'application/json' };
