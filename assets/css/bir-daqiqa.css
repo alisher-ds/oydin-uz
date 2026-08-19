@@ -3,23 +3,19 @@
    ========================================================================== */
 
 :root {
-  --bd-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
-  --bd-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --bd-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
-
-  --ink: #fbf8f2;
-  --muted: #aaa6b7;
-  --violet: #a792ff;
-  --pink: #f183a9;
-  --line: #ffffff1a;
-  --bg: #100e19;
+  /* Sahifa endi `tokens.css` ni yuklaydi: ranglar Oydin tizimidan keladi
+     va kunduzgi/tungi rejimga o'zi ergashadi. Bu yerda faqat shrift
+     taxalluslari qoladi. */
+  --bd-sans: var(--font-sans);
+  --bd-mono: var(--font-mono);
+  --bd-serif: var(--font-serif);
 }
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
-  background: radial-gradient(ellipse at 50% 20%, #292044 0%, var(--bg) 55%);
+  background: var(--paper);
   color: var(--ink);
   font-family: var(--bd-sans);
   min-height: 100vh;
@@ -28,7 +24,7 @@ body {
 .grain {
   position: fixed;
   inset: 0;
-  opacity: 0.2;
+  opacity: 0.055;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
 }
@@ -43,23 +39,36 @@ nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #c4bed4;
+  color: var(--muted);
   font: 10px var(--bd-mono);
   letter-spacing: 1px;
 }
 .logo {
   font: 600 17px var(--bd-sans);
-  color: #fff;
+  color: var(--ink);
   text-decoration: none;
   letter-spacing: -0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
 }
-.logo i {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--pink), var(--violet));
-  margin-right: 7px;
+.logo .brand-symbol {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--ink);
+}
+.logo .brand-symbol svg {
+  width: 20px;
+  height: 20px;
+}
+.brand-arc {
+  fill: var(--paper);
+}
+.brand-arc-accent {
+  fill: var(--accent);
 }
 .screen {
   display: none;
@@ -80,17 +89,22 @@ nav {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px solid #cfc1ff80;
-  background: radial-gradient(circle at 35% 30%, #e4cfff40, #8b70f215 58%, transparent 70%);
+  border: 1px solid var(--line);
+  background: radial-gradient(
+    circle at 35% 30%,
+    color-mix(in srgb, var(--accent) 20%, transparent),
+    color-mix(in srgb, var(--accent) 7%, transparent) 58%,
+    transparent 70%
+  );
   box-shadow:
-    0 0 0 20px #9b86ff09,
-    0 0 80px #aa8fff23;
+    0 0 0 20px color-mix(in srgb, var(--accent) 5%, transparent),
+    0 0 80px color-mix(in srgb, var(--accent) 14%, transparent);
   margin-bottom: 40px;
   animation: float 4s ease-in-out infinite;
 }
 .orb b {
   font: 500 46px var(--bd-serif);
-  color: #fff;
+  color: var(--ink);
   line-height: 0.9;
 }
 .orb small {
@@ -102,7 +116,7 @@ nav {
 .kicker {
   font: 10px var(--bd-mono);
   letter-spacing: 1.4px;
-  color: #bdb5d4;
+  color: var(--muted);
   margin: 0 0 18px;
 }
 h1,
@@ -112,7 +126,7 @@ h2 {
   letter-spacing: -2px;
 }
 em {
-  color: #d6caff;
+  color: var(--accent);
   font-weight: 400;
 }
 .lead {
@@ -124,9 +138,9 @@ em {
 .cta,
 .finish,
 .signal-card button {
-  border: 1px solid #e2d9ff66;
-  background: #e8e0ff;
-  color: #211b31;
+  border: 1px solid transparent;
+  background: var(--ink);
+  color: var(--paper);
   border-radius: 100px;
   padding: 15px 20px;
   font: 600 13px var(--bd-sans);
@@ -136,7 +150,7 @@ em {
 .cta:hover,
 .finish:hover {
   transform: translateY(-3px);
-  box-shadow: 0 15px 30px #ad95ff28;
+  box-shadow: 0 15px 30px color-mix(in srgb, var(--ink) 22%, transparent);
 }
 .cta span,
 .finish span {
@@ -145,7 +159,7 @@ em {
 }
 .hint {
   font-size: 10px;
-  color: #716d7e;
+  color: var(--muted);
   margin-top: 20px;
 }
 .timer-row {
@@ -156,10 +170,10 @@ em {
   border-bottom: 1px solid var(--line);
   padding-bottom: 14px;
   font: 12px var(--bd-mono);
-  color: #bdb6ca;
+  color: var(--muted);
 }
 .pulse {
-  color: #ef9eb7;
+  color: var(--accent);
   font-size: 10px;
   letter-spacing: 0.5px;
 }
@@ -175,27 +189,27 @@ textarea {
   background: transparent;
   border: 0;
   outline: 0;
-  color: #fff;
+  color: var(--ink);
   width: 100%;
   height: 260px;
   resize: none;
   font: 400 34px/1.28 var(--bd-serif);
-  caret-color: #d9cdff;
+  caret-color: var(--accent);
 }
 textarea::placeholder {
-  color: #5b5669;
+  color: var(--muted);
 }
 .word-count {
   position: absolute;
   bottom: 0;
   right: 0;
-  color: #777183;
+  color: var(--muted);
   font: 10px var(--bd-mono);
 }
 .finish {
   background: transparent;
-  color: #f0eaff;
-  border-color: #a994ee75;
+  color: var(--ink);
+  border-color: var(--line);
 }
 .reveal-top {
   margin: 35px 0 8px;
@@ -213,10 +227,10 @@ textarea::placeholder {
   position: absolute;
   max-width: 155px;
   padding: 10px 12px;
-  background: #ffffff0d;
-  border: 1px solid #ffffff21;
+  background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: 11px;
-  color: #e7e1f2;
+  color: var(--ink);
   font-size: 11px;
   line-height: 1.35;
   text-align: left;
@@ -229,31 +243,31 @@ textarea::placeholder {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--pink);
+  background: var(--accent);
   top: -4px;
   left: 50%;
-  box-shadow: 0 0 13px var(--pink);
+  box-shadow: 0 0 13px color-mix(in srgb, var(--accent) 55%, transparent);
 }
 .node.major {
-  background: #d9ceff24;
-  border-color: #c9baff70;
-  color: #fff;
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--ink);
 }
 .node.major::before {
-  background: #d7c9ff;
-  box-shadow: 0 0 16px #d7c9ff;
+  background: var(--accent-2);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent-2) 55%, transparent);
 }
 .signal-card {
   max-width: 500px;
   padding: 20px 25px;
-  background: linear-gradient(110deg, #ffffff12, #d9c8ff19);
-  border: 1px solid #ffffff24;
+  background: linear-gradient(110deg, var(--panel), var(--surface));
+  border: 1px solid var(--line);
   border-radius: 18px;
   text-align: left;
-  box-shadow: 0 20px 50px #00000024;
+  box-shadow: var(--card-shadow);
 }
 .signal-card span {
-  color: #d4c7fb;
+  color: var(--accent);
   font: 10px var(--bd-mono);
   letter-spacing: 1px;
 }
@@ -262,7 +276,7 @@ textarea::placeholder {
   margin: 12px 0 8px;
 }
 .signal-card p {
-  color: #bcb5c9;
+  color: var(--muted);
   font-size: 12px;
   line-height: 1.5;
   margin: 0 0 17px;
@@ -271,11 +285,11 @@ textarea::placeholder {
   padding: 9px 13px;
   font-size: 11px;
   background: transparent;
-  color: #e9e1ff;
-  border-color: #ffffff32;
+  color: var(--ink);
+  border-color: var(--line);
 }
 .quiet {
-  color: #716b80;
+  color: var(--muted);
   font-size: 10px;
   margin: 16px;
 }
@@ -294,7 +308,7 @@ textarea::placeholder {
 
 @keyframes blink {
   50% {
-    opacity: 0.2;
+    opacity: 0.055;
   }
 }
 
@@ -355,7 +369,7 @@ textarea::placeholder {
   font-size: 17px;
 }
 .reveal-empty small {
-  color: rgb(255 255 255 / 55%);
+  color: var(--muted);
   font-size: 12px;
 }
 .reveal-empty-actions {
@@ -367,7 +381,7 @@ textarea::placeholder {
 }
 .ghost-button {
   padding: 12px 18px;
-  border: 1px solid rgb(255 255 255 / 25%);
+  border: 1px solid var(--line);
   border-radius: 99px;
   background: transparent;
   color: inherit;
@@ -375,11 +389,11 @@ textarea::placeholder {
   cursor: pointer;
 }
 .ghost-button:hover {
-  border-color: rgb(255 255 255 / 55%);
+  border-color: var(--accent);
 }
 
-/* Bu sahifa `tokens.css` ni yuklamaydi, shuning uchun umumiy yordamchilar
-   shu yerda takrorlanadi. */
+/* `tokens.css` endi yuklanadi, lekin bu yordamchilar shu sahifaga xos
+   o'lchamlarga ega, shuning uchun joyida qoldirildi. */
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -398,8 +412,8 @@ textarea::placeholder {
   z-index: 999;
   padding: 10px 16px;
   border-radius: 10px;
-  background: #fff;
-  color: #100e19;
+  background: var(--ink);
+  color: var(--paper);
   font: 700 12px var(--bd-sans);
   text-decoration: none;
 }
@@ -407,7 +421,7 @@ textarea::placeholder {
   top: 12px;
 }
 :where(a, button, input, textarea, select, [tabindex]):focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 

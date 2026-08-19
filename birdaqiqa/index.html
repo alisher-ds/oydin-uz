@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#100e19" />
+    <meta name="theme-color" content="#f6f2ea" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
     />
 
     <meta
@@ -19,6 +19,7 @@
       content="Bir daqiqa — boshingizdagi shovqinni 60 soniyada qog‘ozga tushirish va undagi signalni ko‘rish."
     />
     <title>Bir daqiqa — boshingizdagi shovqin uchun joy</title>
+    <link rel="stylesheet" href="/assets/css/tokens.css" />
     <link rel="stylesheet" href="/assets/css/bir-daqiqa.css" />
   </head>
   <body>
@@ -27,7 +28,40 @@
 
     <main id="main">
       <nav aria-label="Asosiy">
-        <a href="/index.html" class="logo"><i aria-hidden="true"></i> bir daqiqa</a>
+        <a href="/index.html" class="logo"
+          ><span class="brand-symbol" aria-hidden="true"
+            ><svg viewBox="0 0 64 64">
+              <mask id="brandCut">
+                <rect width="64" height="64" fill="#fff" />
+                <rect
+                  x="-10"
+                  y="30.7"
+                  width="84"
+                  height="3.2"
+                  fill="#000"
+                  transform="rotate(-32 32 32)"
+                />
+              </mask>
+              <clipPath id="brandLower">
+                <rect x="-10" y="33.9" width="84" height="44" transform="rotate(-32 32 32)" />
+              </clipPath>
+              <g mask="url(#brandCut)">
+                <path
+                  class="brand-arc"
+                  fill-rule="evenodd"
+                  d="M8 32a24 24 0 1 0 48 0a24 24 0 1 0 -48 0ZM23.0 29.5a11.5 11.5 0 1 0 23.0 0a11.5 11.5 0 1 0 -23.0 0Z"
+                />
+                <g clip-path="url(#brandLower)">
+                  <path
+                    class="brand-arc-accent"
+                    fill-rule="evenodd"
+                    d="M8 32a24 24 0 1 0 48 0a24 24 0 1 0 -48 0ZM23.0 29.5a11.5 11.5 0 1 0 23.0 0a11.5 11.5 0 1 0 -23.0 0Z"
+                  />
+                </g>
+              </g></svg
+          ></span>
+          bir daqiqa</a
+        >
         <span>HECH NARSA SAQLANMAYDI</span>
       </nav>
 
