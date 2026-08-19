@@ -16,6 +16,7 @@ import { createConnectionLayer } from './connections.js';
 import { createDialogs } from './dialogs.js';
 import { createMobileActions } from './mobile-actions.js';
 import { createTezPanel } from './tez-panel.js';
+import { createRecallBar } from './recall-bar.js';
 import { createThinkingLayer } from './thinking.js';
 import { createTools } from './tools.js';
 import { autoLayout, fitToView } from './geometry.js';
@@ -464,6 +465,24 @@ export function initMapPage() {
     }
   });
   tez.refresh();
+
+  // Eski fikrni qaytarish: Makon ochilganda bitta unutilgan fikr
+  // yuzaga chiqadi. Qoidalar `core/recall.js` da — kuniga bir marta,
+  // faqat ancha eski fikrlar, mos narsa bo'lmasa hech narsa.
+  createRecallBar({
+    onOpenMap: (mapId, cardId) => {
+      if (switchMap(mapId)) {
+        save();
+        loadMap();
+        thinking.focusCard(cardId);
+      }
+    },
+    onPlace: text => {
+      addCard({ text, type: CARD_TYPES[0], viewportWidth: globalThis.innerWidth || 1200 });
+      save();
+      render();
+    }
+  }).refresh();
   $('#help')?.addEventListener('click', () => dialogs.openHelp());
 
   $('#zoomIn')?.addEventListener('click', () => camera.zoomBy(0.1));
