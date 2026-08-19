@@ -26,7 +26,11 @@ export const MIRRORED_KEYS = Object.freeze([
   'oydin-theme',
   'oydin-connection-relations-v1',
   'oydin-deleted-maps-v1',
-  'oydin-vault-token-v1'
+  'oydin-vault-token-v1',
+  // Taqsimlanmagan fikrlar — ular hali makonga tushmagan, ya'ni yagona
+  // nusxa shu yerda. Zaxirasiz qolsa, brauzer xotirasi tozalanganda
+  // yo'qoladi.
+  'oydin-inbox-v1'
 ]);
 
 const hasIndexedDB = () => typeof indexedDB !== 'undefined' && indexedDB !== null;

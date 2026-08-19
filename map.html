@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#f6f2ea" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
 
     <!-- Shriftlar `<head>` dan yuklanadi. Ilgari ular CSS `@import` orqali kelardi:
          brauzer avval style.css ni yuklab, parse qilib, keyingina shrift so'rovini
@@ -71,6 +72,7 @@
           <a class="topnav-link" href="/oqim.html">Oqim</a>
           <a class="topnav-link active" href="/map.html" aria-current="page">Makon</a>
           <a class="topnav-link" href="/birdaqiqa/">Bir daqiqa</a>
+          <a class="topnav-link" href="/tez/">Tez yozish</a>
         </div>
         <div class="topbar-actions">
           <button
@@ -117,6 +119,10 @@
             </button>
             <button class="rail-button" id="railNotes" type="button">
               <span aria-hidden="true">≡</span><b>Yozuvlar</b><small>barcha fikrlar</small>
+            </button>
+            <button class="rail-button" id="railInbox" type="button" hidden>
+              <span aria-hidden="true">↓</span><b>Kiruvchi <em id="railInboxCount">0</em></b
+              ><small>tez yozilgan fikrlar</small>
             </button>
             <div class="rail-divider"></div>
 

@@ -15,10 +15,12 @@ import { createCardLayer } from './cards.js';
 import { createConnectionLayer } from './connections.js';
 import { createDialogs } from './dialogs.js';
 import { createMobileActions } from './mobile-actions.js';
+import { createInboxPanel } from './inbox-panel.js';
 import { createThinkingLayer } from './thinking.js';
 import { createTools } from './tools.js';
 import { autoLayout, fitToView } from './geometry.js';
 import {
+  CARD_TYPES,
   SPACES,
   activeMap,
   activeMapId,
@@ -448,6 +450,18 @@ export function initMapPage() {
     dialogs.openNotes();
   });
   $('#railMap')?.addEventListener('click', () => fitView());
+
+  // Kiruvchi: `/tez` da yozilgan fikrlarni shu makonga ko'chiradi.
+  const inbox = createInboxPanel({
+    onPlace: text => {
+      addCard({ text, type: CARD_TYPES[0], viewportWidth: globalThis.innerWidth || 1200 });
+      // `save()` SHART: usiz karta faqat ekranda ko'rinadi, lekin
+      // saqlanmaydi va sahifa yangilanishi bilan yo'qoladi.
+      save();
+      render();
+    }
+  });
+  inbox.refresh();
   $('#help')?.addEventListener('click', () => dialogs.openHelp());
 
   $('#zoomIn')?.addEventListener('click', () => camera.zoomBy(0.1));
