@@ -94,6 +94,29 @@ export function createMobileActions() {
       list.append(button);
     }
 
+    // Markaziy navigatsiya telefonda yashirilgan — asboblar paneli baland
+    // bo'lib ketmasligi uchun. Shu sababli sahifalar shu yerda turadi,
+    // aks holda Makon sahifasidan boshqa joyga o'tib bo'lmasdi.
+    // Havolalar DOM'dan o'qiladi: nom yoki manzil o'zgarsa, bu yer ham
+    // o'zi yangilanadi.
+    const pages = $$('.map-center-nav .topnav-link').filter(
+      link => !link.classList.contains('active')
+    );
+    if (pages.length) {
+      const group = el('nav', { class: 'mobile-actions-pages' });
+      group.setAttribute('aria-label', 'Sahifalar');
+      for (const link of pages) {
+        group.append(
+          el('a', {
+            class: 'mobile-action-page',
+            href: link.getAttribute('href'),
+            text: link.textContent.trim()
+          })
+        );
+      }
+      list.append(el('p', { class: 'mobile-actions-label', text: 'SAHIFALAR' }), group);
+    }
+
     sheet.append(head, list);
     document.body.append(sheet);
     sheet.addEventListener('cancel', event => {

@@ -177,3 +177,50 @@ test.describe('Makon telefonda', () => {
     await expect(page.locator('#connectionCount')).toHaveText('1');
   });
 });
+
+/**
+ * "Bir daqiqa" sahifasi mavjud edi, lekin unga hech qayerdan havola
+ * yo'q edi — foydalanuvchi uni faqat manzilni yozib topa olardi.
+ *
+ * Havola qo'shilgach 390px ekranda navigatsiya sig'may, butun sahifa
+ * gorizontal aylanardi (hujjat 437px, ekran 390px). Quyidagi testlar
+ * ikkala holatni ham qo'riqlaydi.
+ */
+test.describe('"Bir daqiqa" ga yo‘l', () => {
+  for (const page_ of ['/index.html', '/oqim.html', '/map.html']) {
+    test(`${page_} navigatsiyasida havola bor`, async ({ page }) => {
+      await page.goto(page_);
+      const link = page.locator(
+        '.topnav a[href="/birdaqiqa/"], .map-center-nav a[href="/birdaqiqa/"]'
+      );
+      await expect(link).toHaveCount(1);
+    });
+  }
+
+  test('to‘rtinchi havola telefonda gorizontal aylanish hosil qilmaydi', async ({ page }) => {
+    for (const path of ['/index.html', '/oqim.html']) {
+      await page.goto(path);
+      const { doc, win } = await page.evaluate(() => ({
+        doc: document.documentElement.scrollWidth,
+        win: innerWidth
+      }));
+      expect(doc, `${path} yon tomonga aylanmasligi kerak`).toBeLessThanOrEqual(win);
+    }
+  });
+
+  test('Makonda sahifalar "⋯" varaqda qo‘l ostida', async ({ page }) => {
+    // Markaziy navigatsiya bu sahifada telefonda yashirilgan (asboblar
+    // paneli baland bo'lib ketmasligi uchun), shuning uchun yagona yo'l —
+    // varaq. U bo'lmasa Makondan boshqa sahifaga o'tib bo'lmaydi.
+    await page.goto('/map.html');
+    await expect(page.locator('.map-center-nav')).toBeHidden();
+
+    await page.locator('.mobile-actions-trigger button').click();
+    const pages = page.locator('.mobile-action-page');
+    await expect(pages).toHaveCount(3);
+    await expect(page.locator('.mobile-action-page[href="/birdaqiqa/"]')).toBeVisible();
+
+    await page.locator('.mobile-action-page[href="/birdaqiqa/"]').click();
+    await expect(page).toHaveURL(/\/birdaqiqa\/$/);
+  });
+});
