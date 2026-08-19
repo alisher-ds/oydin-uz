@@ -140,6 +140,16 @@ export function initChat() {
       status.textContent = '';
       status.dataset.tone = 'ok';
     } catch (error) {
+      // Javob kelmagan bo'lsa, foydalanuvchi xabari suhbatda javobsiz
+      // osilib qolmasligi kerak: uni olib tashlaymiz va matnni maydonga
+      // qaytaramiz, shunda qayta yuborish bir bosishda bo'ladi. Aks holda
+      // har bir urinish yangi nusxa qoldiradi va ular tarix sifatida
+      // keyingi so'rovga ham ketaveradi.
+      const last = messages.at(-1);
+      if (last?.role === 'user' && last.text === text) messages.pop();
+      persist(messages);
+      render();
+      if (!field.value.trim()) field.value = text;
       status.textContent = error.message;
       status.dataset.tone = 'error';
     } finally {
