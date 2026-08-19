@@ -1,1 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#151714"/><path d="M32 9C19.5 9 12 18.2 12 32s7.5 23 20 23 20-9 20-23S44.5 9 32 9Z" fill="none" stroke="#f5f1e8" stroke-width="4"/><path d="M32 20c-6.2 0-10 4.7-10 12s3.8 12 10 12 10-4.7 10-12-3.8-12-10-12Z" fill="none" stroke="#df684f" stroke-width="4"/><circle cx="32" cy="32" r="3.5" fill="#f5f1e8"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Oydin">
+  <defs>
+    <linearGradient id="oydin-light" x1="0.1" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#f5f2ea" />
+      <stop offset="1" stop-color="#cbc4b3" />
+    </linearGradient>
+    <linearGradient id="oydin-accent" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#e07a62" />
+      <stop offset="1" stop-color="#c1543e" />
+    </linearGradient>
+    <mask id="oydin-cut">
+      <rect width="64" height="64" fill="#fff" />
+      <rect x="-10" y="30.7" width="84" height="3.2" fill="#000" transform="rotate(-32 32 32)" />
+    </mask>
+    <clipPath id="oydin-lower">
+      <rect x="-10" y="33.9" width="84" height="44" transform="rotate(-32 32 32)" />
+    </clipPath>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#22231f" />
+  <g mask="url(#oydin-cut)">
+    <path fill="url(#oydin-light)" fill-rule="evenodd" d="M8 32a24 24 0 1 0 48 0a24 24 0 1 0 -48 0ZM23.0 29.5a11.5 11.5 0 1 0 23.0 0a11.5 11.5 0 1 0 -23.0 0Z" />
+    <g clip-path="url(#oydin-lower)">
+      <path fill="url(#oydin-accent)" fill-rule="evenodd" d="M8 32a24 24 0 1 0 48 0a24 24 0 1 0 -48 0ZM23.0 29.5a11.5 11.5 0 1 0 23.0 0a11.5 11.5 0 1 0 -23.0 0Z" />
+    </g>
+  </g>
+</svg>
