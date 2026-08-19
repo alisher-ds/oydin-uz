@@ -49,7 +49,7 @@ async function runSync({ keepalive = false } = {}) {
 
   try {
     const token = getToken();
-        const spaces = normalizeList(readJson('oydin-maps', {}))
+    const spaces = normalizeList(readJson('oydin-maps', {}))
       .sort((a, b) => String(b.updatedAt ?? '').localeCompare(String(a.updatedAt ?? '')))
       .slice(0, MAX_SPACES);
     const deleted = readJson('oydin-deleted-maps-v1', {}) ?? {};
