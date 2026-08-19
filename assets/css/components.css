@@ -712,7 +712,10 @@ dialog::backdrop {
     justify-content: flex-start;
   }
   .tez-panel .idea-actions .soft-button {
-    min-height: 34px;
+    /* Asl "Oqim" sahifasida 34px edi. Barmoq uchun bu kam — loyihaning
+       qolgan joyida 44px chegarasi o'rnatilgan. Faqat balandlik oshdi,
+       rang va shakl o'zgarmadi. */
+    min-height: 44px;
   }
   .tez-panel .idea-actions .icon-button {
     width: 34px;
