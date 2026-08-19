@@ -512,8 +512,25 @@ select {
   .brand-word {
     display: none;
   }
+  /* To'rtinchi havola ("Bir daqiqa") qo'shilgach, 390px ekranda qator
+     sig'may, butun sahifa gorizontal aylanardi. Endi faqat navigatsiya
+     o'zi siljiydi: barcha havolalar qo'l ostida qoladi va sahifa
+     yon tomonga qimirlamaydi. */
+  .topnav,
+  .map-center-nav {
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+  .topnav::-webkit-scrollbar,
+  .map-center-nav::-webkit-scrollbar {
+    display: none;
+  }
   .topnav-link {
     padding: 8px 10px;
+    flex: 0 0 auto;
+    scroll-snap-align: center;
   }
   .outline-button {
     display: none;

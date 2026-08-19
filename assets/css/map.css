@@ -1598,6 +1598,28 @@ body:not(.has-mobile-actions) .mobile-actions-trigger {
 .mobile-action:focus-visible {
   border-color: var(--accent);
 }
+.mobile-actions-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.mobile-action-page {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  color: var(--ink);
+  font: 700 13px var(--font-sans);
+  text-decoration: none;
+}
+.mobile-action-page:hover,
+.mobile-action-page:focus-visible {
+  border-color: var(--accent);
+}
 .mobile-action-glyph {
   display: grid;
   place-items: center;
