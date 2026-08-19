@@ -41,8 +41,8 @@ jobs:
   e2e:
     name: Brauzer testlari
     runs-on: ubuntu-latest
-    # Uch urinish (3 x 6 daq) + testlar uchun joy.
-    timeout-minutes: 35
+    # Uch urinish (3 x 4 daq) + testlar uchun joy.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
 
@@ -65,32 +65,33 @@ jobs:
           path: ~/.cache/ms-playwright
           key: pw-${{ runner.os }}-${{ steps.pw.outputs.version }}
 
-      # Yuklab olish Playwright CDN'iga bog'liq va u ba'zan javob bermay
-      # qoladi. Har bir urinish 6 daqiqa bilan cheklangan, uch marta
-      # urinamiz — shunda vaqtinchalik uzilish butun CI ni to'xtatmaydi.
+      # `--with-deps` ataylab ISHLATILMAYDI. U `sudo apt-get` ni chaqiradi,
+      # va aynan o'sha joy osilib qolgan edi: azure mirror javob bermay,
+      # archive.ubuntu.com ga tushib qolardi. Undan ham yomoni — timeout
+      # `playwright` jarayonini o'ldirsa ham, uning ostidagi apt-get tirik
+      # qolib, /var/lib/apt/lists/lock ni ushlab turardi va keyingi barcha
+      # urinishlar darhol "Could not get lock" bilan yiqilardi.
+      #
+      # ubuntu-latest obrazida Google Chrome oldindan o'rnatilgan, ya'ni
+      # Chromium uchun kerakli tizim kutubxonalari allaqachon mavjud.
+      # Faqat brauzerni yuklab olamiz — apt umuman ishlatilmaydi, shuning
+      # uchun qayta urinishlar endi bir-biriga xalaqit bermaydi.
       - name: Chromium o'rnatish
         if: steps.pw-cache.outputs.cache-hit != 'true'
-        timeout-minutes: 20
+        timeout-minutes: 14
         run: |
           for attempt in 1 2 3; do
             echo "::group::Chromium — urinish $attempt"
-            if timeout 360 npx playwright install --with-deps chromium; then
+            if timeout 240 npx playwright install chromium; then
               echo "::endgroup::"
               exit 0
             fi
             echo "::endgroup::"
             echo "Urinish $attempt muvaffaqiyatsiz tugadi."
-            sleep 15
+            sleep 10
           done
           echo "Chromium uch urinishda ham o'rnatilmadi."
           exit 1
-
-      # Kesh topilganda brauzer allaqachon bor — faqat tizim kutubxonalari
-      # kerak, bu esa bir necha soniya.
-      - name: Tizim kutubxonalari
-        if: steps.pw-cache.outputs.cache-hit == 'true'
-        timeout-minutes: 10
-        run: npx playwright install-deps chromium
 
       - name: Playwright testlari
         run: npm run test:e2e
