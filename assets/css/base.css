@@ -601,3 +601,56 @@ select {
     font-size: 25px;
   }
 }
+
+/* ==========================================================================
+   Telefon: gorizontal chiqib ketishning oldini olish
+   ==========================================================================
+   Auditda `hero-copy` va `hero-visual` 390px ekranda 439px kenglikda edi:
+   grid elementining standart `min-width: auto` qiymati ichkaridagi keng
+   kontent (sarlavha va mini-xarita) tufayli trekni cho'zib yuborardi.
+   ========================================================================== */
+
+@media (max-width: 760px) {
+  .view {
+    width: min(1400px, calc(100vw - 28px));
+  }
+
+  /* Grid va flex elementlari ichki kontent tufayli cho'zilmasin. */
+  .hero-grid > *,
+  .hero-copy,
+  .hero-visual,
+  .principles-layout > *,
+  .manifest-grid > *,
+  .product-note > * {
+    min-width: 0;
+  }
+
+  .hero-grid {
+    min-height: auto;
+    gap: 34px;
+    padding: 34px 0 48px;
+  }
+
+  /* Uzun so'zlar chetga chiqmasin. */
+  h1,
+  h2,
+  .hero-lede,
+  .section-lede {
+    overflow-wrap: anywhere;
+  }
+
+  .mini-map,
+  .visual-frame {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .trust-row {
+    flex-wrap: wrap;
+    gap: 8px 14px;
+  }
+  .hero-actions {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}

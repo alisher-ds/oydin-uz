@@ -48,10 +48,7 @@ function paint(theme) {
 
   for (const button of $$('#themeToggle')) {
     button.setAttribute('aria-pressed', String(night));
-    button.setAttribute(
-      'aria-label',
-      night ? 'Yorug‘ rejimga o‘tish' : 'Tungi rejimga o‘tish'
-    );
+    button.setAttribute('aria-label', night ? 'Yorug‘ rejimga o‘tish' : 'Tungi rejimga o‘tish');
   }
 }
 

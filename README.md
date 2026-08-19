@@ -27,6 +27,7 @@ sifatida koʻrish mumkin boʻladi.
 - Pan, zoom, pinch-zoom; ekranga sigʻdirish va avtomatik joylashtirish
 - Bir nechta makon, qidiruv, bekor qilish (Ctrl+Z), JSON eksport/import
 - Yorugʻ va tungi rejim (tizim sozlamasiga ergashadi), 5 ta makon ohangi
+- Telefon uchun moslashtirilgan: barcha amallar "⋯" varagʻida, 44px tugmalar
 - Toʻliq klaviatura boshqaruvi va ekran oʻquvchilari uchun qoʻllab-quvvatlash
 - Maʼlumot brauzerda saqlanadi + IndexedDB zaxirasi + ixtiyoriy sinxronizatsiya
 
@@ -121,7 +122,8 @@ assets/
   css/      tokens · base · components · map · oqim · ai · bir-daqiqa
   js/
     core/       dom · storage · events · theme
-    map/        state · geometry · camera · cards · connections · dialogs · thinking · tools
+    map/        state · geometry · camera · cards · connections · dialogs
+                thinking · tools · mobile-actions
     oqim/ ai/ landing/ sync/ bir-daqiqa/
     boot-*.js   har sahifaning kirish nuqtasi
 functions/    Cloudflare Pages Functions (API)

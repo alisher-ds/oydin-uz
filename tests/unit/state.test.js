@@ -195,3 +195,49 @@ describe('undo (bekor qilish)', () => {
     assert.equal(state.undo(), false);
   });
 });
+
+describe('placeCard — ekran kengligiga moslashish', () => {
+  it('telefonda kartalar USTMA-UST tushmaydi', () => {
+    // Ilgari joylashuv `Math.min(x, viewportWidth - 260)` bilan cheklanardi:
+    // 390px ekranda hamma karta bitta nuqtaga yopishib qolardi.
+    const points = [0, 1, 2, 3].map(index =>
+      state.placeCard({ index, viewportWidth: 390, parent: null })
+    );
+    const seen = new Set(points.map(p => `${p.x},${p.y}`));
+    assert.equal(seen.size, points.length, 'kartalar bir joyda');
+    // Tor ekranda bitta ustun — hammasi bir xil x, turli y.
+    assert.equal(new Set(points.map(p => p.x)).size, 1);
+    assert.equal(new Set(points.map(p => p.y)).size, points.length);
+  });
+
+  it('keng ekranda bir nechta ustun ishlatiladi', () => {
+    const points = [0, 1, 2].map(index =>
+      state.placeCard({ index, viewportWidth: 1400, parent: null })
+    );
+    assert.ok(new Set(points.map(p => p.x)).size > 1, 'hammasi bitta ustunda');
+    assert.equal(points[0].y, points[1].y, 'birinchi qator bir xil balandlikda');
+  });
+
+  it('bola karta tor ekranda ota-onaning TAGIGA tushadi', () => {
+    const parent = { x: 40, y: 100 };
+    const child = state.placeCard({ index: 1, viewportWidth: 390, parent });
+    assert.equal(child.x, parent.x, 'tor ekranda yon tomonga qo‘yilgan');
+    assert.ok(child.y > parent.y, 'pastga tushmagan');
+  });
+
+  it('bola karta keng ekranda ota-onaning YONIGA tushadi', () => {
+    const parent = { x: 40, y: 100 };
+    const child = state.placeCard({ index: 1, viewportWidth: 1400, parent });
+    assert.ok(child.x > parent.x, 'yonga qo‘yilmagan');
+  });
+
+  it('har qanday kenglikda koordinatalar haqiqiy son', () => {
+    for (const width of [320, 390, 768, 1024, 1920]) {
+      for (const index of [0, 5, 12]) {
+        const p = state.placeCard({ index, viewportWidth: width, parent: null });
+        assert.ok(Number.isFinite(p.x) && Number.isFinite(p.y), `${width}/${index}`);
+        assert.ok(p.x >= 0 && p.y >= 0);
+      }
+    }
+  });
+});

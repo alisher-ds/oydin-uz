@@ -189,21 +189,43 @@ export function persist({ touch = true } = {}) {
 
 /* ------------------------------- kartalar ------------------------------- */
 
+/** Yangi karta uchun joy tanlaydi. Ustunlar soni ekran kengligiga bog'liq. */
+export function placeCard({ index, viewportWidth, parent }) {
+  const COLUMN = 300;
+  const ROW = 175;
+  const MARGIN = 40;
+
+  // Telefonda bitta ustun, keng ekranda bir nechta.
+  const columns = Math.max(1, Math.floor((viewportWidth - MARGIN) / COLUMN));
+
+  if (parent) {
+    // Bolani ota-onaning yoniga qo'yamiz; joy bo'lmasa — tagiga.
+    const besideX = parent.x + COLUMN - 10;
+    const fitsBeside = besideX + 240 <= Math.max(viewportWidth, COLUMN * columns + MARGIN);
+    return fitsBeside
+      ? { x: besideX, y: parent.y + ((index % 3) - 1) * 110 }
+      : { x: parent.x, y: parent.y + ROW };
+  }
+
+  const column = index % columns;
+  const row = Math.floor(index / columns);
+  return { x: MARGIN + column * COLUMN, y: 100 + row * ROW };
+}
+
 export function addCard({ text, type, parentId = null, viewportWidth = 1200 }) {
   const map = activeMap();
   if (!map) return null;
 
   const parent = parentId ? findCard(parentId) : null;
   const index = map.cards.length;
-  const x = parent ? parent.x + 290 : 80 + (index % 4) * 300;
-  const y = parent ? parent.y + ((index % 3) - 1) * 120 : 120 + (Math.floor(index / 4) % 5) * 160;
+  const point = placeCard({ index, viewportWidth, parent });
 
   const card = {
     id: uid(),
     text: String(text ?? '').slice(0, 500),
     type: CARD_TYPES.includes(type) ? type : CARD_TYPES[0],
-    x: Math.min(x, Math.max(80, viewportWidth - 260)),
-    y,
+    x: point.x,
+    y: point.y,
     createdAt: nowIso(),
     detail: { summary: '', due: '', status: 'Ochiq', notes: '' }
   };

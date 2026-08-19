@@ -96,7 +96,7 @@ export function initOqimPage() {
     const activeId = readJson('oydin-active-map', null);
     if (typeof activeId === 'string') switchMap(activeId);
 
-    addCard({ text: idea.text, type: 'G‘oya', viewportWidth: 1200 });
+    addCard({ text: idea.text, type: 'G‘oya', viewportWidth: globalThis.innerWidth || 1200 });
     const result = persist();
     if (!result.ok) {
       setStatus('Makonga ko‘chirilmadi — xotira to‘lgan.', 'error');

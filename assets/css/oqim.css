@@ -197,3 +197,43 @@
   color: #9f4c45;
   font-weight: 700;
 }
+
+/* Telefon: sahifa gorizontal aylanmasin. */
+@media (max-width: 760px) {
+  .oqim-page .oqim-main {
+    max-width: 100%;
+    padding-top: 28px;
+  }
+  .oqim-page .oqim-capture,
+  .oqim-page .oqim-search,
+  .oqim-page #ideas,
+  .oqim-page .idea-row {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .oqim-page .idea-text {
+    overflow-wrap: anywhere;
+  }
+  .oqim-page .oqim-submit-row {
+    flex-wrap: wrap;
+  }
+  /* Qidiruv maydonining o‘zi ham barmoq uchun yetarli balandlikda. */
+  .oqim-page .oqim-search {
+    padding: 4px 14px;
+  }
+  .oqim-page .oqim-search input {
+    min-height: 44px;
+  }
+  .oqim-page .oqim-submit-row .primary-button {
+    flex: 1 1 auto;
+  }
+  /* Amallar telefonda doim ko'rinsin va barmoqqa mos bo'lsin. */
+  .oqim-page .idea-actions {
+    opacity: 1;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .oqim-page .idea-actions .soft-button {
+    flex: 1 1 auto;
+  }
+}

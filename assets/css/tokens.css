@@ -107,7 +107,10 @@ body.night {
   border-radius: 10px;
   background: var(--ink);
   color: var(--paper);
-  font: 700 12px Manrope, system-ui, sans-serif;
+  font:
+    700 12px Manrope,
+    system-ui,
+    sans-serif;
   text-decoration: none;
   transition: top 0.18s;
 }

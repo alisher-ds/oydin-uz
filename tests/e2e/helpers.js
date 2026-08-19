@@ -141,3 +141,31 @@ export async function clickHitTested(page, selector) {
   if (covered) throw new Error(`clickHitTested(${selector}): ${covered}`);
   await page.locator(selector).click({ force: true });
 }
+
+/**
+ * Makon amalini bajaradi — ekran o'lchamidan qat'i nazar.
+ *
+ * Telefonda ba'zi tugmalar "⋯" varag'iga ko'chirilgan, shuning uchun test
+ * ularni to'g'ridan-to'g'ri bosa olmaydi. Bu yordamchi tugma ko'rinsa uni
+ * bosadi, aks holda varaqni ochib, o'sha amalni tanlaydi.
+ */
+export async function runMapAction(page, buttonId, sheetLabel) {
+  const direct = page.locator(`#${buttonId}`);
+  if (await direct.isVisible().catch(() => false)) {
+    await direct.click();
+    return;
+  }
+  await page.locator('#mobileActionsOpen').click();
+  await page.locator('.mobile-action', { hasText: sheetLabel }).click();
+}
+
+/** Makon ohangini tanlaydi (telefonda varaq orqali). */
+export async function pickSpaceTone(page, space) {
+  const swatch = page.locator(`.swatch[data-space="${space}"]`);
+  if (await swatch.isVisible().catch(() => false)) {
+    await swatch.click();
+    return;
+  }
+  await page.locator('#mobileActionsOpen').click();
+  await page.locator(`.mobile-swatch[data-space="${space}"]`).click();
+}

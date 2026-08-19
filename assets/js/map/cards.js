@@ -249,15 +249,21 @@ export function createCardLayer({ canvas, camera, handlers }) {
 
       /**
        * Amallar paneli standart holatda kartaning USTIDA turadi. Karta ish
-       * maydonining yuqori chekkasiga yaqin bo'lsa, panel qirqilib qoladi.
+       * maydonining yuqori chekkasiga yaqin bo'lsa, panel qirqiladi yoki
+       * asboblar panelining tagida qolib, bosib bo'lmaydigan bo'ladi.
        *
-       * Buni RENDER vaqtida hisoblaymiz, `pointerenter` da emas: aks holda
-       * panel foydalanuvchi sichqonchani olib borgan paytda joyini
-       * o'zgartirib, bosish mo'ljaldan chetga tushardi.
+       * Chegara qiymati tashqaridan keladi va asboblar panelining HAQIQIY
+       * balandligidan hisoblanadi: telefonda panel ikki qatorga o'tib,
+       * ancha balandroq bo'ladi — qat'iy son bu yerda ishlamaydi.
+       *
+       * Hisob RENDER vaqtida bajariladi, `pointerenter` da emas: aks holda
+       * panel sichqoncha yaqinlashganda joyini o'zgartirib, bosishni
+       * chalg'itardi.
        */
       const zoom = camera?.zoom ?? 1;
       const panY = camera?.state?.panY ?? 0;
-      node.classList.toggle('actions-below', panY + card.y * zoom < 52);
+      const safeTop = Number.isFinite(view.safeTop) ? view.safeTop : 52;
+      node.classList.toggle('actions-below', panY + card.y * zoom < safeTop);
 
       node.classList.toggle('connect-source', String(view.connectingFrom) === id);
       node.classList.toggle('is-focused', String(view.focusedId) === id);

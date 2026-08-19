@@ -16,9 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -41,11 +41,12 @@ jobs:
   e2e:
     name: Brauzer testlari
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Uch urinish (3 x 4 daq) + testlar uchun joy.
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -53,15 +54,51 @@ jobs:
       - name: Bog'liqliklarni o'rnatish
         run: npm ci
 
+      - name: Playwright versiyasini aniqlash
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Brauzer keshi
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      # `--with-deps` ataylab ISHLATILMAYDI. U `sudo apt-get` ni chaqiradi,
+      # va aynan o'sha joy osilib qolgan edi: azure mirror javob bermay,
+      # archive.ubuntu.com ga tushib qolardi. Undan ham yomoni — timeout
+      # `playwright` jarayonini o'ldirsa ham, uning ostidagi apt-get tirik
+      # qolib, /var/lib/apt/lists/lock ni ushlab turardi va keyingi barcha
+      # urinishlar darhol "Could not get lock" bilan yiqilardi.
+      #
+      # ubuntu-latest obrazida Google Chrome oldindan o'rnatilgan, ya'ni
+      # Chromium uchun kerakli tizim kutubxonalari allaqachon mavjud.
+      # Faqat brauzerni yuklab olamiz — apt umuman ishlatilmaydi, shuning
+      # uchun qayta urinishlar endi bir-biriga xalaqit bermaydi.
       - name: Chromium o'rnatish
-        run: npx playwright install --with-deps chromium
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 14
+        run: |
+          for attempt in 1 2 3; do
+            echo "::group::Chromium — urinish $attempt"
+            if timeout 240 npx playwright install chromium; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            echo "Urinish $attempt muvaffaqiyatsiz tugadi."
+            sleep 10
+          done
+          echo "Chromium uch urinishda ham o'rnatilmadi."
+          exit 1
 
       - name: Playwright testlari
         run: npm run test:e2e
 
       - name: Hisobotni saqlash
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: playwright-report
           path: playwright-report/

@@ -13,6 +13,7 @@ import {
   collectErrors,
   connectionStart,
   openCardActions,
+  runMapAction,
   seedMap
 } from './helpers.js';
 
@@ -190,7 +191,7 @@ test.describe('F1 — "Joylash" foydalanuvchi joylashuvini buzmaydi', () => {
     const before = await page.evaluate(() =>
       [...document.querySelectorAll('.thought-card')].map(node => node.style.left)
     );
-    await page.locator('#autoLayout').click();
+    await runMapAction(page, 'autoLayout', 'Avtomatik joylash');
     await expect(page.locator('#confirmDialog')).toBeVisible();
 
     // Bekor qilinganda hech narsa o‘zgarmaydi.
@@ -211,7 +212,7 @@ test.describe('F1 — "Joylash" foydalanuvchi joylashuvini buzmaydi', () => {
     const before = await page.evaluate(() =>
       [...document.querySelectorAll('.thought-card')].map(node => node.style.left)
     );
-    await page.locator('#autoLayout').click();
+    await runMapAction(page, 'autoLayout', 'Avtomatik joylash');
     await page.locator('#confirmDialog [data-action="confirm"]').click();
     await page.waitForTimeout(500);
 
@@ -249,7 +250,7 @@ test.describe('F6 — `data-id` to‘qnashuvi', () => {
     await seedMap(page);
     await page.goto('/map.html');
     await page.waitForTimeout(600);
-    await page.locator('#railNotes').click();
+    await runMapAction(page, 'railNotes', 'Barcha yozuvlar');
     await page.waitForTimeout(300);
     await expect(page.locator('[data-card-id="c1"]')).toHaveCount(1);
   });
