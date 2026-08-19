@@ -190,14 +190,24 @@ Brauzerning "Do Not Track" sozlamasi ham hurmat qilinadi. Lokal
 ishlab chiqishda statistika oʻzi oʻchiq (`localhost`).
 
 **Oʻqish** — `STATS_TOKEN` maxfiysi oʻrnatilgan boʻlishi kerak, aks holda
-endpoint umuman javob bermaydi (404):
+endpoint umuman javob bermaydi (404). Notoʻgʻri token ham 404 qaytaradi,
+ya'ni endpoint borligi oshkor boʻlmaydi:
 
 ```bash
 npx wrangler pages secret put STATS_TOKEN
 npx wrangler pages secret put IP_SALT     # rate limiting izlari uchun
-
-curl "https://oydin-uz.pages.dev/api/stat?token=...&days=30"
 ```
+
+Bitta manzil ikki xil javob beradi — brauzer HTML soʻraydi, `curl` yoʻq:
+
+```
+https://oydin-uz.pages.dev/api/stat?token=...&days=30   → oʻqiladigan sahifa
+curl "https://oydin-uz.pages.dev/api/stat?token=..."     → JSON
+```
+
+Sahifa ataylab `/api/` ostida turadi: Oydin'da ikkita sahifa bor va
+uchinchisi qoʻshilmasligi kerak. Saytda unga hech qanday havola yoʻq va
+u qidiruv tizimlariga indekslanmaydi.
 
 Bevosita bazadan ham oʻqish mumkin:
 

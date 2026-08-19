@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { STAT_EVENTS, decide, planVisit } from '../../assets/js/core/stat.js';
-import { ALLOWED_EVENTS, normalizeEvents } from '../../functions/api/stat.js';
+import { ALLOWED_EVENTS, normalizeEvents, onRequestGet } from '../../functions/api/stat.js';
 
 describe('mijoz va server ro‘yxati', () => {
   it('BIR XIL bo‘ladi — ajralib ketsa hodisa jimgina yo‘qoladi', () => {
@@ -104,5 +104,75 @@ describe('normalizeEvents() — serverning himoyasi', () => {
 
   it('ro‘yxatdagi hamma nom qabul qilinadi', () => {
     assert.equal(normalizeEvents([...ALLOWED_EVENTS]).length, ALLOWED_EVENTS.length);
+  });
+});
+
+/**
+ * `GET /api/stat` — kim, qanday va nima ko'rishi.
+ *
+ * Bu yerda uchta xavf tekshiriladi: (1) endpoint tasodifan ochiq qolib
+ * ketmasin, (2) brauzer sahifa, dastur JSON olsin, (3) noto'g'ri token
+ * "topilmadi" deb javob bersin — "noto'g'ri parol" deb emas, aks holda
+ * endpoint mavjudligi oshkor bo'ladi.
+ */
+describe('GET /api/stat', () => {
+  /** Minimal D1 o'rnini bosuvchi. */
+  const fakeDb = rows => ({
+    prepare: () => ({
+      bind: () => ({ all: async () => ({ results: rows }), first: async () => null }),
+      first: async () => null,
+      run: async () => {}
+    }),
+    batch: async () => {}
+  });
+
+  const ask = (env, { accept = 'application/json', token = 'kalit' } = {}) =>
+    onRequestGet({
+      request: new Request(`https://oydin-uz.pages.dev/api/stat?token=${token}`, {
+        headers: { accept }
+      }),
+      env
+    });
+
+  const ROWS = [
+    { day: '2026-08-19', event: 'tashrif', hits: 5 },
+    { day: '2026-08-19', event: 'fikr', hits: 2 }
+  ];
+
+  it('STATS_TOKEN o‘rnatilmagan bo‘lsa endpoint umuman yo‘q', async () => {
+    const response = await ask({ OYDIN_DB: fakeDb(ROWS) });
+    assert.equal(response.status, 404);
+  });
+
+  it('noto‘g‘ri token ham 404 — endpoint borligi oshkor bo‘lmasin', async () => {
+    const env = { STATS_TOKEN: 'kalit', OYDIN_DB: fakeDb(ROWS) };
+    const response = await ask(env, { token: 'boshqa' });
+    assert.equal(response.status, 404);
+  });
+
+  it('to‘g‘ri token bilan JSON qaytaradi', async () => {
+    const env = { STATS_TOKEN: 'kalit', OYDIN_DB: fakeDb(ROWS) };
+    const response = await ask(env);
+    assert.equal(response.headers.get('content-type'), 'application/json; charset=utf-8');
+
+    const data = await response.json();
+    assert.equal(data.jami.tashrif, 5);
+    assert.equal(data.kunlar['2026-08-19'].fikr, 2);
+  });
+
+  it('brauzer so‘rasa — o‘qiladigan sahifa', async () => {
+    const env = { STATS_TOKEN: 'kalit', OYDIN_DB: fakeDb(ROWS) };
+    const response = await ask(env, { accept: 'text/html,application/xhtml+xml' });
+
+    assert.match(response.headers.get('content-type'), /text\/html/);
+    const html = await response.text();
+    assert.match(html, /<!doctype html>/);
+    assert.ok(html.includes('<b>5</b>'), 'tashrif soni ko‘rinmadi');
+  });
+
+  it('sahifa keshlanmaydi — raqamlar eskirib qolmasin', async () => {
+    const env = { STATS_TOKEN: 'kalit', OYDIN_DB: fakeDb(ROWS) };
+    const response = await ask(env, { accept: 'text/html' });
+    assert.equal(response.headers.get('cache-control'), 'no-store');
   });
 });
