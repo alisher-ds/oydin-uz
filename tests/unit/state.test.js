@@ -241,3 +241,65 @@ describe('placeCard — ekran kengligiga moslashish', () => {
     }
   });
 });
+
+describe('redo (qaytarish)', () => {
+  /** Haqiqiy ilovadagidek: o'zgarish + saqlash. Tarix `persist()` da yoziladi. */
+  const add = text => {
+    state.addCard({ text });
+    state.persist();
+  };
+
+  it('bekor qilingan amalni qaytaradi', () => {
+    add('birinchi');
+    add('ikkinchi');
+    assert.equal(state.cards().length, 2);
+
+    assert.ok(state.undo());
+    assert.equal(state.cards().length, 1);
+
+    assert.ok(state.redo());
+    assert.equal(state.cards().length, 2);
+    assert.ok(state.cards().some(card => card.text === 'ikkinchi'));
+  });
+
+  it('bekor qilinmagan bo\u2018lsa qaytaradigan narsa yo\u2018q', () => {
+    add('yagona');
+    assert.equal(state.canRedo(), false);
+    assert.equal(state.redo(), false);
+  });
+
+  it('bekor qilingandan keyin YANGI amal "oldinga" yo\u2018lni uzadi', () => {
+    add('a');
+    add('b');
+    assert.ok(state.undo());
+    assert.equal(state.canRedo(), true);
+
+    // Boshqa yo'lga burildik — eski tarmoqqa qaytish mumkin emas.
+    add('boshqa');
+    assert.equal(state.canRedo(), false);
+    assert.equal(state.redo(), false);
+  });
+
+  it('bir necha qadam oldinga va orqaga yura oladi', () => {
+    for (const text of ['a', 'b', 'c']) add(text);
+    assert.equal(state.cards().length, 3);
+
+    state.undo();
+    state.undo();
+    assert.equal(state.cards().length, 1);
+
+    state.redo();
+    state.redo();
+    assert.equal(state.cards().length, 3);
+  });
+
+  it('qaytargandan keyin yana bekor qilish mumkin', () => {
+    add('a');
+    add('b');
+    state.undo();
+    state.redo();
+    assert.equal(state.cards().length, 2);
+    assert.ok(state.undo(), 'qaytargandan keyin tarix bo\u2018shab qolmasligi kerak');
+    assert.equal(state.cards().length, 1);
+  });
+});

@@ -94,7 +94,6 @@
             <div class="title-row">
               <label class="visually-hidden" for="mapTitle">Makon nomi</label>
               <input id="mapTitle" value="Yangi makon" />
-              <span class="save-state" id="saveStatus" role="status" data-tone="ok">saqlandi</span>
             </div>
             <p class="map-subtitle">
               Fikrni yozing. Keyin uni yoying, ichiga kiring yoki boshqa fikr bilan tabiiy ravishda
@@ -112,6 +111,10 @@
         <!-- Eski fikrni qaytaruvchi chiziq. Mos narsa bo'lmasa
              ko'rinmaydi, shuning uchun `hidden` bilan boshlanadi. -->
         <aside class="recall" id="recall" aria-label="Eski fikr" hidden></aside>
+
+        <!-- Zaxira eslatmasi. Bir marta ko'rsatiladi va yopilgach
+             hech qachon qaytmaydi — shuning uchun `hidden` bilan boshlanadi. -->
+        <aside class="backup-notice" id="backupNotice" aria-label="Zaxira nusxa" hidden></aside>
 
         <section class="map-layout">
           <aside class="map-rail" aria-label="Makon boshqaruvi">
@@ -375,9 +378,21 @@
             </p>
           </div>
         </div>
+        <!-- Qo'llanma o'zi faqat birinchi tashrifda chiqadi. Keyin
+             kerak bo'lsa — mana shu tugma orqali. -->
+        <div class="help-replay">
+          <button class="soft-button" id="replayTour" type="button">
+            Qisqa qo‘llanmani ko‘rish <span aria-hidden="true">→</span>
+          </button>
+        </div>
       </div>
     </dialog>
 
     <script type="module" src="/assets/js/boot-map.js"></script>
+    <!-- Saqlash holati. Ataylab `.map-page` va `.workspace` dan
+         TASHQARIDA: ular pan/zoom uchun `transform` ishlatadi, `transform`
+         esa `position: fixed` uchun yangi tayanch yaratadi va element
+         ekranga emas, makonga yopishib qolardi. -->
+    <span class="save-state" id="saveStatus" role="status" data-tone="ok">saqlandi</span>
   </body>
 </html>

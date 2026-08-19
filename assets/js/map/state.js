@@ -19,6 +19,7 @@ const ACTIVE_KEY = 'oydin-active-map';
 const RELATIONS_KEY = 'oydin-connection-relations-v1';
 const TOMBSTONE_KEY = 'oydin-deleted-maps-v1';
 const HISTORY_KEY = 'oydin-history-v1';
+const REDO_KEY = 'oydin-redo-v1';
 
 const HISTORY_MAX_ENTRIES = 20;
 const HISTORY_MAX_BYTES = 1_500_000;
@@ -432,6 +433,10 @@ function pushHistory() {
   if (history.at(-1) === previous) return;
 
   history.push(previous);
+  // Yangi amal — "oldinga" yo'l uziladi. Bu undo/redo ning standart
+  // xatti-harakati: bekor qilib, keyin boshqa narsa qilsangiz, eski
+  // tarmoqqa qaytib bo'lmaydi.
+  writeJson(REDO_KEY, [], { silent: true });
   // Ham son, ham bayt bo'yicha cheklaymiz — ilgari 30 ta to'liq nusxa
   // localStorage kvotasini yeb, asosiy yozuvni ham buzardi.
   while (history.length > HISTORY_MAX_ENTRIES) history.shift();
@@ -441,15 +446,15 @@ function pushHistory() {
 }
 
 export const canUndo = () => (readJson(HISTORY_KEY, [])?.length ?? 0) > 0;
+export const canRedo = () => (readJson(REDO_KEY, [])?.length ?? 0) > 0;
 
-/** Oxirgi holatga qaytaradi. @returns {boolean} qaytarildimi */
-export function undo() {
-  const history = readJson(HISTORY_KEY, []);
-  if (!Array.isArray(history) || !history.length) return false;
-
-  const snapshot = history.pop();
-  writeJson(HISTORY_KEY, history, { silent: true });
-
+/**
+ * Saqlangan nusxani holatga qaytaradi.
+ *
+ * `undo()` va `redo()` faqat qaysi to'plamdan olib, qaysisiga qo'yish
+ * bilan farq qiladi — qolgani bir xil, shuning uchun shu yerda.
+ */
+function applySnapshot(snapshot) {
   let parsed;
   try {
     parsed = JSON.parse(snapshot);
@@ -470,11 +475,51 @@ export function undo() {
     ? parsed.activeId
     : Object.keys(state.maps)[0];
 
+  // Tarix yozuvi o'chirilgan holda saqlaymiz — aks holda qaytarishning
+  // o'zi yangi tarix yozuvi bo'lib, cheksiz halqa hosil qilardi.
   recordingHistory = false;
   const result = persist({ touch: false });
   recordingHistory = true;
   lastSnapshot = snapshotOf();
   return result.ok;
+}
+
+/** Bir qadam orqaga. @returns {boolean} qaytarildimi */
+export function undo() {
+  const history = readJson(HISTORY_KEY, []);
+  if (!Array.isArray(history) || !history.length) return false;
+
+  const current = snapshotOf();
+  const snapshot = history.pop();
+  writeJson(HISTORY_KEY, history, { silent: true });
+
+  if (!applySnapshot(snapshot)) return false;
+
+  const redo = readJson(REDO_KEY, []);
+  writeJson(REDO_KEY, [...(Array.isArray(redo) ? redo : []), current].slice(-HISTORY_MAX_ENTRIES), {
+    silent: true
+  });
+  return true;
+}
+
+/** Bekor qilingan qadamni qaytaradi. @returns {boolean} qaytarildimi */
+export function redo() {
+  const redoStack = readJson(REDO_KEY, []);
+  if (!Array.isArray(redoStack) || !redoStack.length) return false;
+
+  const current = snapshotOf();
+  const snapshot = redoStack.pop();
+  writeJson(REDO_KEY, redoStack, { silent: true });
+
+  if (!applySnapshot(snapshot)) return false;
+
+  const history = readJson(HISTORY_KEY, []);
+  writeJson(
+    HISTORY_KEY,
+    [...(Array.isArray(history) ? history : []), current].slice(-HISTORY_MAX_ENTRIES),
+    { silent: true }
+  );
+  return true;
 }
 
 /** Testlar uchun: holatni to'liq almashtiradi. */

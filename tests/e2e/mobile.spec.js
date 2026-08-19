@@ -14,7 +14,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { blockExternalRequests } from './helpers.js';
+import { blockExternalRequests, skipTour } from './helpers.js';
 
 const MIN_TAP = 44;
 
@@ -22,6 +22,7 @@ test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
 test.beforeEach(async ({ page }) => {
   await blockExternalRequests(page);
+  await skipTour(page);
 });
 
 /** Ko'rinadigan interaktiv elementlarning o'lchamini tekshiradi. */

@@ -28,9 +28,43 @@
   letter-spacing: -1.7px;
   width: min(600px, 55vw);
 }
+/*
+ * Saqlash holati — doimiy, lekin e'tiborni tortmaydigan.
+ *
+ * Ilgari bu element sarlavha yonida turardi VA `display: none !important`
+ * bilan yashirilgan edi, ya'ni amalda umuman ko'rinmasdi. Endi u pastki
+ * o'ng burchakda, har doim joyida.
+ */
 .save-state {
-  font: 500 9px var(--font-mono);
+  position: fixed;
+  right: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  backdrop-filter: blur(6px);
+  font: 600 10px var(--font-mono);
+  color: var(--muted);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 8%, transparent);
+  pointer-events: none;
+  transition: 0.25s;
+}
+.save-state::before {
+  content: '✓';
+  font-size: 11px;
   color: #69856b;
+}
+.save-state[data-tone='pending']::before {
+  content: '↻';
+}
+.save-state[data-tone='error']::before {
+  content: '⚠';
+  color: #9f4c45;
 }
 .map-subtitle {
   margin: 8px 0 0;
@@ -921,9 +955,6 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent) !important;
 }
-.map-page #saveStatus {
-  display: none !important;
-}
 .map-page .workspace-toolbar,
 .map-page .flow-panel,
 .map-page .space-hint {
@@ -1303,7 +1334,6 @@
   color: var(--muted);
 }
 .map-page .save-state {
-  display: inline-block !important;
   max-width: 42ch;
 }
 
@@ -1813,4 +1843,264 @@ body:not(.has-mobile-actions) .mobile-actions-trigger {
 }
 .mobile-swatch[data-space='ink'] {
   background: linear-gradient(135deg, #252b2c, #3a4140);
+}
+
+/* ------------------------------- toast ----------------------------------- */
+
+/*
+ * Qisqa muddatli xabar. `Ctrl+Z` bosilganda ekranda hech qanday javob
+ * yo'q edi — foydalanuvchi amal bajarilganini bilmasdi.
+ */
+
+.toast-host {
+  position: fixed;
+  left: 50%;
+  bottom: calc(58px + env(safe-area-inset-bottom));
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(92vw, 30rem);
+  padding: 11px 16px;
+  border: 1px solid color-mix(in srgb, var(--paper) 22%, var(--ink));
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 16px 38px color-mix(in srgb, var(--ink) 26%, transparent);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: 0.22s;
+}
+.toast[data-shown='true'] {
+  opacity: 1;
+  transform: translateY(0);
+}
+.toast-text {
+  font: 700 12px var(--font-sans);
+}
+.toast-hint {
+  font: 500 10px var(--font-mono);
+  color: color-mix(in srgb, var(--paper) 68%, transparent);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    transition: none;
+  }
+}
+
+/* ------------------------- birinchi qo'llanma ---------------------------- */
+
+/*
+ * Bo'sh makon yangi odamga hech narsa taklif qilmaydi. Qo'llanma faqat
+ * BIRINCHI tashrifda chiqadi va istagan payt to'xtatiladi.
+ *
+ * Yoritish bitta element bilan: ulkan `box-shadow` atrofni qoraytiradi,
+ * elementning o'zi esa shaffof qoladi.
+ */
+
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+.tour-spot {
+  position: fixed;
+  border-radius: 14px;
+  box-shadow: 0 0 0 9999px color-mix(in srgb, #12110f 62%, transparent);
+  pointer-events: none;
+  transition: 0.28s;
+}
+.tour-spot[data-on='false'] {
+  inset: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: color-mix(in srgb, #12110f 62%, transparent);
+}
+.tour-card {
+  position: relative;
+  z-index: 1;
+  width: min(30rem, 100%);
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 0 30px 80px rgb(0 0 0 / 34%);
+}
+.tour-card[data-place='top'] {
+  margin-bottom: auto;
+  margin-top: 6vh;
+}
+.tour-card[data-place='bottom'] {
+  margin-top: auto;
+  margin-bottom: 6vh;
+}
+.tour-card h2 {
+  margin: 6px 0 10px;
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.tour-kicker {
+  margin: 0;
+  font: 700 10px var(--font-mono);
+  letter-spacing: 1.4px;
+  color: var(--accent-2);
+}
+.tour-body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.tour-hint {
+  display: inline-block;
+  margin: 12px 0 0;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  font: 600 11px var(--font-mono);
+  color: var(--ink);
+}
+.tour-figure {
+  display: block;
+  width: 100%;
+  max-width: 17rem;
+  height: auto;
+  margin: 4px 0 14px;
+}
+.tour-figure .tour-node {
+  fill: var(--surface);
+  stroke: var(--line);
+}
+.tour-figure .tour-edge {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+}
+.tour-figure .tour-dot {
+  fill: var(--accent);
+}
+.tour-figure .tour-glyph {
+  fill: var(--paper);
+  font: 700 11px var(--font-sans);
+}
+.tour-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 20px;
+}
+.tour-dots {
+  display: flex;
+  gap: 6px;
+}
+.tour-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: 0.2s;
+}
+.tour-dots i[data-active='true'] {
+  width: 18px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.tour-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tour-skip {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font: 700 11px var(--font-sans);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.tour-skip:hover {
+  color: var(--ink);
+}
+
+@media (max-width: 560px) {
+  .tour-card {
+    padding: 18px;
+  }
+  .tour-card h2 {
+    font-size: 20px;
+  }
+  .tour-foot {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .tour-buttons {
+    justify-content: space-between;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-spot,
+  .tour-dots i {
+    transition: none;
+  }
+}
+
+.help-replay {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+/* --------------------------- zaxira eslatmasi ---------------------------- */
+
+/*
+ * Bir martalik, yopilgach qaytmaydi. Ogohlantirish emas, taklif —
+ * shuning uchun qizil emas, tinch ohangda.
+ */
+
+.backup-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 13px 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 12px 12px 0;
+  background: var(--panel);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.backup-notice b {
+  font-weight: 800;
+}
+.backup-notice span {
+  color: var(--muted);
+}
+.backup-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }

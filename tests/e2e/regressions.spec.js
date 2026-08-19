@@ -14,11 +14,13 @@ import {
   connectionStart,
   openCardActions,
   runMapAction,
-  seedMap
+  seedMap,
+  skipTour
 } from './helpers.js';
 
 test.beforeEach(async ({ page }) => {
   await blockExternalRequests(page);
+  await skipTour(page);
 });
 
 test.describe('K1 — `layer is not defined` regressiyasi', () => {

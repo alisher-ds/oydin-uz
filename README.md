@@ -31,6 +31,11 @@ chiqish shart emas.
   tahrirlash va istagan payt makonga joylashtirish
 - **Eski fikrni qaytarish** — unutilgan yozuv vaqti-vaqti bilan oʻzi
   yuzaga chiqadi (kuniga bir marta, faqat ancha eskilari)
+- **Birinchi kirganlar uchun qisqa qoʻllanma** — beshta qadam, istagan
+  payt toʻxtatiladi. Faqat birinchi tashrifda oʻzi ochiladi; keyin
+  Yordam oynasidagi tugma orqali
+- **Saqlash koʻrsatkichi** — pastki oʻng burchakda: saqlandi ·
+  sinxronlanmoqda · oflayn
 - Fokus rejimi — bitta fikr va uning bevosita qoʻshnilarini ajratib koʻrish
 - Pan, zoom, pinch-zoom; ekranga sigʻdirish va avtomatik joylashtirish
 - Bir nechta makon, qidiruv, bekor qilish (Ctrl+Z), JSON eksport/import
@@ -49,6 +54,7 @@ chiqish shart emas.
 | `/`                   | Makon ichidan qidirish                                                                                      |
 | `F`                   | Hammasini ekranga sigʻdirish                                                                                |
 | `Ctrl/Cmd+Z`          | Bekor qilish                                                                                                |
+| `Ctrl/Cmd+Shift+Z`    | Qaytarish (`Ctrl+Y` ham)                                                                                    |
 | `Esc`                 | Rejimdan/fokusdan chiqish                                                                                   |
 | Karta tanlanganda     | `E` tahrirlash · `C` bogʻlash · `Space` atrofini koʻrish · `Delete` oʻchirish · strelkalar bilan koʻchirish |
 
@@ -131,8 +137,10 @@ assets/
   css/      tokens · base · components · map · ai
   js/
     core/       dom · storage · events · theme · pwa · notes · recall
+                stat · backup-notice
     map/        state · geometry · camera · cards · connections · dialogs
                 thinking · tools · mobile-actions · tez-panel · recall-bar
+                tour · toast · save-badge
     ai/ landing/ sync/
     boot-landing.js · boot-map.js   har sahifaning kirish nuqtasi
 functions/    Cloudflare Pages Functions (API)
@@ -147,7 +155,10 @@ _headers      CSP va boshqa himoya sarlavhalari
 
 ## Maʼlumot va maxfiylik
 
-- Barcha fikrlar birinchi navbatda **brauzerda** saqlanadi.
+- Barcha fikrlar birinchi navbatda **brauzerda** saqlanadi. Buni pastki
+  oʻng burchakdagi koʻrsatkich tasdiqlab turadi.
+- Maʼlumot bir haftadan beri qurilmadan chiqmagan boʻlsa, **bir marta**
+  zaxira olish taklif qilinadi. Yopilgach boshqa qaytmaydi.
 - IndexedDB zaxira nusxasi localStorage tozalanib ketsa maʼlumotni tiklaydi.
 - Sinxronizatsiya **ixtiyoriy**. U yoqilganda 64 belgili vault kaliti
   yaratiladi — bu sizning yagona parolingiz. Uni yoʻqotsangiz, serverdagi

@@ -1,0 +1,243 @@
+/**
+ * Birinchi tashrif tajribasi va ma'lumot ishonchliligi.
+ *
+ * Uchta narsa tekshiriladi:
+ *  1. Qo'llanma — FAQAT birinchi marta, har doim to'xtatib bo'ladigan;
+ *  2. Saqlash ko'rsatkichi — HAQIQATAN ko'rinadigan (u bir vaqtlar
+ *     `display: none !important` bilan yashirilgan edi);
+ *  3. Bekor qilish — ekranda javob beradigan.
+ */
+
+import { expect, test } from '@playwright/test';
+import { blockExternalRequests, seedMap, skipTour } from './helpers.js';
+
+/** Qo'llanma ko'rsatilgan deb belgilangan qurilma. */
+const asReturning = page => skipTour(page);
+
+test.beforeEach(async ({ page }) => {
+  await blockExternalRequests(page);
+});
+
+test.describe('Birinchi kirgan odam uchun qo‘llanma', () => {
+  test('birinchi tashrifda O‘ZI ochiladi', async ({ page }) => {
+    await page.goto('/map.html');
+    await expect(page.locator('.tour')).toBeVisible();
+    await expect(page.locator('.tour-card h2')).toHaveText('Bu — sizning makoningiz');
+  });
+
+  test('ikkinchi tashrifda ochilmaydi', async ({ page }) => {
+    await page.goto('/map.html');
+    await expect(page.locator('.tour')).toBeVisible();
+
+    // Oxirigacha o'tamiz.
+    for (let step = 0; step < 4; step += 1) {
+      await page.locator('.tour-card .primary-button').click();
+    }
+    await page.locator('.tour-card .primary-button').click();
+    await expect(page.locator('.tour')).toHaveCount(0);
+
+    await page.reload();
+    await page.waitForTimeout(700);
+    await expect(page.locator('.tour')).toHaveCount(0);
+  });
+
+  test('beshta qadamning hammasi ko‘rinadi', async ({ page }) => {
+    await page.goto('/map.html');
+    const sarlavhalar = [];
+    for (let step = 0; step < 5; step += 1) {
+      sarlavhalar.push(await page.locator('.tour-card h2').textContent());
+      await page.locator('.tour-card .primary-button').click();
+    }
+    expect(sarlavhalar).toHaveLength(5);
+    expect(new Set(sarlavhalar).size).toBe(5);
+    await expect(page.locator('.tour')).toHaveCount(0);
+  });
+
+  test('Esc bilan chiqib ketish mumkin va u qaytmaydi', async ({ page }) => {
+    await page.goto('/map.html');
+    await expect(page.locator('.tour')).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.tour')).toHaveCount(0);
+
+    await page.reload();
+    await page.waitForTimeout(700);
+    await expect(page.locator('.tour')).toHaveCount(0);
+  });
+
+  test('"O‘tkazib yuborish" ham ishlaydi', async ({ page }) => {
+    await page.goto('/map.html');
+    await page.locator('.tour-skip').click();
+    await expect(page.locator('.tour')).toHaveCount(0);
+  });
+
+  test('ishi bor odamga O‘ZI ochilmaydi', async ({ page }) => {
+    // Belgi yo'q, lekin makonda fikrlar bor — bu odam yangi emas.
+    await seedMap(page);
+    await page.goto('/map.html');
+    await page.waitForTimeout(700);
+    await expect(page.locator('.tour')).toHaveCount(0);
+  });
+
+  test('Yordam oynasidagi tugma qo‘llanmani qayta ochadi', async ({ page }) => {
+    await asReturning(page);
+    await page.goto('/map.html');
+    await page.waitForTimeout(600);
+    await expect(page.locator('.tour')).toHaveCount(0);
+
+    await page.locator('#help').click();
+    await page.locator('#replayTour').click();
+    await expect(page.locator('.tour')).toBeVisible();
+  });
+
+  /**
+   * Qadam yo'q elementga ishora qilsa, qo'llanma bo'sh joyni yoritadi va
+   * yolg'on gapiradi. Bu test aynan shuni ushlaydi.
+   */
+  test('har bir qadamning nishoni HAQIQATAN sahifada bor', async ({ page }) => {
+    await asReturning(page);
+    await page.goto('/map.html');
+    await page.waitForTimeout(600);
+
+    const yoq = await page.evaluate(async () => {
+      const { STEPS } = await import('/assets/js/map/tour.js');
+      return STEPS.filter(step => step.target && !document.querySelector(step.target)).map(
+        step => step.target
+      );
+    });
+    expect(yoq).toEqual([]);
+  });
+});
+
+test.describe('Saqlash ko‘rsatkichi', () => {
+  /**
+   * Regressiya: bu element kodda bor edi va to'g'ri ishlardi, lekin
+   * `.map-page #saveStatus { display: none !important }` uni butunlay
+   * yashirib qo'ygan edi.
+   */
+  test('HAQIQATAN ko‘rinadi — yashirilgan emas', async ({ page }) => {
+    await asReturning(page);
+    await page.goto('/map.html');
+    await expect(page.locator('#saveStatus')).toBeVisible();
+
+    const olcham = await page.locator('#saveStatus').boundingBox();
+    expect(olcham.width).toBeGreaterThan(40);
+    expect(olcham.height).toBeGreaterThan(16);
+  });
+
+  test('ekranning pastki o‘ng burchagida turadi', async ({ page }) => {
+    await asReturning(page);
+    await page.goto('/map.html');
+    const box = await page.locator('#saveStatus').boundingBox();
+    const view = page.viewportSize();
+    expect(box.x + box.width).toBeGreaterThan(view.width * 0.6);
+    expect(box.y).toBeGreaterThan(view.height * 0.6);
+  });
+
+  test('internet yo‘qolsa buni aytadi', async ({ page, context }) => {
+    await asReturning(page);
+    await page.goto('/map.html');
+    await page.waitForTimeout(600);
+
+    await context.setOffline(true);
+    await page.waitForTimeout(400);
+    await expect(page.locator('#saveStatus')).toContainText('oflayn');
+
+    await context.setOffline(false);
+  });
+});
+
+test.describe('Bekor qilish ko‘rinadigan bo‘ldi', () => {
+  test('Ctrl+Z xabar chiqaradi va qaytarish yo‘lini aytadi', async ({ page }) => {
+    await asReturning(page);
+    await seedMap(page);
+    await page.goto('/map.html');
+    await page.waitForTimeout(700);
+
+    // Tarix uchun bitta o'zgarish kerak.
+    await page.locator('#addFirst').click();
+    await page.locator('#thoughtText').fill('Bekor qilinadigan fikr');
+    await page.locator('#cardForm button[type="submit"]').click();
+    await expect(page.locator('.thought-card', { hasText: 'Bekor qilinadigan fikr' })).toHaveCount(
+      1
+    );
+
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('.toast')).toBeVisible();
+    await expect(page.locator('.toast-text')).toHaveText('Bekor qilindi.');
+    await expect(page.locator('.toast-hint')).toContainText('Ctrl+Shift+Z');
+    await expect(page.locator('.thought-card', { hasText: 'Bekor qilinadigan fikr' })).toHaveCount(
+      0
+    );
+  });
+
+  test('Ctrl+Shift+Z HAQIQATAN qaytaradi — xabar yolg‘on emas', async ({ page }) => {
+    await asReturning(page);
+    await seedMap(page);
+    await page.goto('/map.html');
+    await page.waitForTimeout(700);
+
+    await page.locator('#addFirst').click();
+    await page.locator('#thoughtText').fill('Qaytariladigan fikr');
+    await page.locator('#cardForm button[type="submit"]').click();
+
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('.thought-card', { hasText: 'Qaytariladigan fikr' })).toHaveCount(0);
+
+    await page.keyboard.press('Control+Shift+z');
+    await expect(page.locator('.thought-card', { hasText: 'Qaytariladigan fikr' })).toHaveCount(1);
+    await expect(page.locator('.toast-text')).toHaveText('Qaytarildi.');
+  });
+});
+
+test.describe('Zaxira eslatmasi', () => {
+  /**
+   * DIQQAT: `addInitScript` HAR navigatsiyada ishlaydi, shuning uchun
+   * faqat BIR MARTA ekamiz. Aks holda `reload()` dan keyin ilova yozgan
+   * "yopildi" belgisi qayta yozilib ketardi va test yolg'on natija
+   * berardi. Xuddi shu tuzoq `seedMap` da ham hujjatlashtirilgan.
+   */
+  const seedQuiet = (page, days) =>
+    page.addInitScript(quiet => {
+      const MARKER = '__oydin_backup_seeded';
+      if (localStorage.getItem(MARKER)) return;
+      localStorage.setItem(
+        'oydin-backup-v1',
+        JSON.stringify({ firstSeenAt: new Date(Date.now() - quiet * 86400000).toISOString() })
+      );
+      localStorage.setItem(MARKER, '1');
+    }, days);
+
+  test('ma’lumot bir haftadan beri qurilmadan chiqmagan bo‘lsa chiqadi', async ({ page }) => {
+    await asReturning(page);
+    await seedMap(page);
+    await seedQuiet(page, 30);
+    await page.goto('/map.html');
+
+    await expect(page.locator('#backupNotice')).toBeVisible();
+    await expect(page.locator('#backupNotice')).toContainText('faqat shu qurilmada');
+  });
+
+  test('yangi kelgan odamni bezovta qilmaydi', async ({ page }) => {
+    await asReturning(page);
+    await seedMap(page);
+    await seedQuiet(page, 1);
+    await page.goto('/map.html');
+    await page.waitForTimeout(600);
+    await expect(page.locator('#backupNotice')).toBeHidden();
+  });
+
+  test('yopilgach BOSHQA HECH QACHON qaytmaydi', async ({ page }) => {
+    await asReturning(page);
+    await seedMap(page);
+    await seedQuiet(page, 30);
+    await page.goto('/map.html');
+
+    await page.locator('#backupNotice [aria-label="Yopish"]').click();
+    await expect(page.locator('#backupNotice')).toBeHidden();
+
+    await page.reload();
+    await page.waitForTimeout(700);
+    await expect(page.locator('#backupNotice')).toBeHidden();
+  });
+});

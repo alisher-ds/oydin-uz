@@ -169,3 +169,19 @@ export async function pickSpaceTone(page, space) {
   await page.locator('#mobileActionsOpen').click();
   await page.locator(`.mobile-swatch[data-space="${space}"]`).click();
 }
+
+/**
+ * Birinchi kirganlar qo'llanmasini o'chiradi.
+ *
+ * Qo'llanma butun ekranni qoplaydi, ya'ni u haqida BO'LMAGAN testlarda
+ * har bir bosishni to'sib qo'yadi. Bu yordamchi "bu odam saytga birinchi
+ * marta kirmayapti" degan holatni yaratadi — aynan shu testlar
+ * tekshiradigan holat.
+ *
+ * Qo'llanmaning o'zi `tests/e2e/tour.spec.js` da sinaladi.
+ */
+export async function skipTour(page) {
+  await page.addInitScript(() => {
+    localStorage.setItem('oydin-tour-v1', JSON.stringify({ done: true, at: '2026-01-01' }));
+  });
+}

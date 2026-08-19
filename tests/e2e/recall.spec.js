@@ -12,7 +12,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { blockExternalRequests } from './helpers.js';
+import { blockExternalRequests, skipTour } from './helpers.js';
 
 const DAY = 86_400_000;
 const daysAgo = n => new Date(Date.now() - n * DAY).toISOString();
@@ -42,6 +42,7 @@ const withNote = async (page, days, text) => {
 
 test.beforeEach(async ({ page }) => {
   await blockExternalRequests(page);
+  await skipTour(page);
 });
 
 test.describe('Eski fikrni qaytarish', () => {
