@@ -31,7 +31,17 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile', use: { ...devices['Pixel 7'] } }
+    {
+      // Aniq viewport — `devices[...]` dagi `isMobile` emulyatsiyasi ba'zi
+      // CI/sandbox muhitlarida qo'llanmaydi va o'lchovlar noto'g'ri chiqadi.
+      name: 'mobile',
+      use: {
+        viewport: { width: 390, height: 844 },
+        hasTouch: true,
+        userAgent: devices['Pixel 7'].userAgent,
+        deviceScaleFactor: 2
+      }
+    }
   ],
   webServer: {
     command: `npx --yes http-server . -p ${PORT} -c-1 --silent`,

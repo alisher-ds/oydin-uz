@@ -1329,9 +1329,9 @@
     order: 9;
     margin: 0 0 0 8px;
     padding: 0;
-    width: 34px;
-    height: 34px;
-    flex: 0 0 34px;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
@@ -1372,4 +1372,423 @@
 .map-page .thought-card.actions-below .card-actions {
   top: auto;
   bottom: -38px;
+}
+
+/* ==========================================================================
+   Telefon: Makon sahifasini barmoq bilan ishlatsa bo‘ladigan qilish
+   ==========================================================================
+   Auditda topilgan eng jiddiy muammo: asboblar paneli ikkita klasterdan
+   iborat va `justify-content: space-between` bilan joylashardi. 390px
+   ekranda ikkinchi klaster (Yangi makon / Saqlash) x=395–569 ga, ya'ni
+   ekrandan TASHQARIGA chiqib ketardi — telefonda ularni bosib bo'lmasdi.
+   ========================================================================== */
+
+@media (max-width: 760px) {
+  .map-page .workspace-toolbar {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+  }
+  .map-page .workspace-toolbar .tool-cluster {
+    flex: 0 1 auto;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .map-page .workspace-toolbar .tool-cluster::-webkit-scrollbar {
+    display: none;
+  }
+  .map-page .workspace-toolbar button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 8px 12px;
+    white-space: nowrap;
+  }
+  .map-page .workspace-toolbar .tool-cluster span {
+    min-width: 48px;
+  }
+
+  /* Pastki panel ekrandan chiqib ketmasin. */
+  .map-page .flow-panel {
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: none;
+    transform: none;
+    bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .map-page .flow-panel button {
+    margin-left: auto;
+    min-height: 44px;
+  }
+
+  /* Makon ohangi tugmalari barmoqqa mos. */
+  .map-page .swatch {
+    min-height: 44px;
+  }
+  .map-page .rail-button {
+    min-height: 48px;
+  }
+
+  /* Sarlavha maydoni ham qulay bo‘lsin. */
+  .map-page .title-row input {
+    width: 100%;
+    min-height: 44px;
+    font-size: 24px;
+  }
+  .map-page .map-heading {
+    gap: 12px;
+  }
+  .map-page .map-head-actions {
+    width: 100%;
+  }
+  .map-page .map-head-actions button {
+    flex: 1 1 auto;
+  }
+
+  /* Ish maydoni telefonda balandroq bo‘lsin — asosiy joy shu. */
+  .map-page .workspace {
+    height: calc(100dvh - 210px);
+    min-height: 360px;
+  }
+
+  /* Bo‘sh holatdagi asosiy tugma ham barmoqqa mos. */
+  .map-page .empty-state button {
+    min-height: 48px;
+    padding: 12px 20px;
+    font-size: 13px;
+  }
+
+  /* Karta amallari barmoq uchun kattaroq. */
+  .map-page .card-actions button {
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+  }
+  .map-page .card-actions {
+    gap: 4px;
+    padding: 5px;
+  }
+
+  /* Fikr matni telefonda o‘qish uchun kattaroq. */
+  .map-page .thought-card p {
+    font-size: 16px;
+  }
+
+  /* Dialog ichidagi maydonlar. */
+  .card-dialog-form textarea,
+  .detail-dialog textarea,
+  .detail-dialog input,
+  .detail-dialog select {
+    font-size: 16px;
+    min-height: 48px;
+  }
+  .card-dialog-form textarea,
+  .detail-dialog textarea {
+    min-height: 120px;
+  }
+  .type-picker .type {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Aloqa chizig‘ini barmoq bilan bosish oson bo‘lsin. */
+  .connection-glow {
+    stroke-width: 18;
+  }
+}
+
+/* ==========================================================================
+   Telefon: ixcham asboblar paneli + amallar varag‘i
+   ==========================================================================
+   Panelda faqat zoom va "Sig‘dirish" qoladi; qolgan amallar "⋯" tugmasi
+   ortidagi pastki varaqqa ko‘chadi. Shu tufayli panel bir qatorga sig‘adi
+   va ish maydonini yeb qo‘ymaydi (ilgari 184px balandlikda edi).
+   ========================================================================== */
+
+.mobile-actions-trigger {
+  margin-left: auto;
+}
+
+body:not(.has-mobile-actions) .mobile-actions-trigger {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .map-page.has-mobile-actions .workspace-toolbar {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+  }
+  /* Varaqqa ko‘chgan tugmalar paneldan olib tashlanadi. */
+  /* Aniq sinf nomlari bo‘yicha — `nth-of-type` mo‘rt edi, chunki
+     `#oydinProductTools` panelga birinchi bo‘lib qo‘shiladi va tartibni
+     suradi. */
+  .map-page.has-mobile-actions #oydinProductTools,
+  .map-page.has-mobile-actions .workspace-toolbar .space-tools,
+  .map-page.has-mobile-actions #autoLayout {
+    display: none;
+  }
+  .map-page.has-mobile-actions .mobile-actions-trigger {
+    display: flex;
+  }
+  .map-page.has-mobile-actions .mobile-actions-trigger button {
+    font-size: 20px;
+    line-height: 1;
+  }
+}
+
+/* Pastki varaq */
+.mobile-actions {
+  width: min(560px, calc(100vw - 16px));
+  max-height: 82dvh;
+  margin: auto auto 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 22px 22px 0 0;
+  background: var(--panel);
+  color: var(--ink);
+}
+.mobile-actions::backdrop {
+  background: color-mix(in srgb, var(--ink) 45%, transparent);
+  backdrop-filter: blur(4px);
+}
+.mobile-actions-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 18px 6px;
+}
+.mobile-actions-head .kicker {
+  margin: 0;
+}
+.mobile-actions-head .dialog-close {
+  position: static;
+}
+.mobile-actions-list {
+  display: grid;
+  gap: 6px;
+  padding: 8px 14px calc(18px + env(safe-area-inset-bottom));
+}
+.mobile-action {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  color: var(--ink);
+  font: 700 14px var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+}
+.mobile-action:hover,
+.mobile-action:focus-visible {
+  border-color: var(--accent);
+}
+.mobile-action-glyph {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-size: 15px;
+}
+
+/* ==========================================================================
+   Telefon: ish maydoni asosiy joyni egallasin
+   ==========================================================================
+   O‘lchov (390×844): topbar 74 + sarlavha 111 + yon panel 235 = 420px —
+   ya'ni ish maydoni ekranning yarmidan pastda boshlanardi va uni ko‘rish
+   uchun aylantirish kerak edi. Endi yon panel bitta ixcham qatorga,
+   sarlavha esa bitta satrga sig‘adi.
+   ========================================================================== */
+
+@media (max-width: 760px) {
+  .map-page .map-app {
+    padding: 8px 0 10px;
+  }
+
+  /* Sarlavha: nom va amallar bitta ixcham blokda. */
+  .map-page .map-heading {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .map-page .map-heading .kicker {
+    display: none;
+  }
+  .map-page .title-row {
+    gap: 8px;
+  }
+  .map-page .title-row input {
+    font-size: 20px;
+    min-height: 40px;
+  }
+  .map-page .map-head-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .map-page .map-head-actions button {
+    min-height: 44px;
+    font-size: 12px;
+  }
+
+  /* Yon panel: bitta gorizontal qator, kerak bo‘lsa siljiydi. */
+  .map-page .map-rail {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    padding: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-radius: 14px;
+  }
+  .map-page .map-rail::-webkit-scrollbar {
+    display: none;
+  }
+  .map-page .rail-button {
+    /* Asosiy qoidada `width: 100%` bor — telefonda u qo‘shni tugmani
+       ekrandan itarib chiqarardi. */
+    width: auto;
+    flex: 0 1 auto;
+    min-width: auto;
+    min-height: 44px;
+    padding: 6px 12px;
+    grid-template-columns: auto auto;
+    column-gap: 7px;
+    align-items: center;
+  }
+  .map-page .rail-button small {
+    display: none;
+  }
+  .map-page .rail-button span {
+    grid-row: auto;
+    font-size: 16px;
+  }
+  .map-page .rail-theme {
+    flex: 0 0 auto;
+    order: 0;
+    padding: 0 4px;
+    border: 0;
+    background: transparent;
+  }
+  .map-page .theme-swatches {
+    display: flex;
+    gap: 6px;
+  }
+  .map-page .swatch {
+    flex: 0 0 34px;
+    width: 34px;
+    min-height: 34px;
+    height: 34px;
+  }
+  .map-page .rail-help {
+    order: 0;
+    margin-left: 0;
+  }
+
+  /* Ish maydoni qolgan joyni to‘liq egallaydi.
+     Chrome balandligi o‘lchandi: topbar 74 + sarlavha ~107 + yon panel 58
+     + oraliqlar ~45 = ~284px. Shu tufayli sahifa vertikal aylanmaydi. */
+  .map-page .workspace {
+    height: calc(100dvh - 284px);
+    min-height: 300px;
+  }
+
+  /* Aloqa turi paneli — pastki varaq ko‘rinishida, kartalarni qoplamasin. */
+  .map-page .relation-panel {
+    position: fixed;
+    inset: auto 0 0;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    border-radius: 20px 20px 0 0;
+    z-index: 40;
+  }
+  .map-page .relation-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .map-page .relation-options button {
+    min-height: 46px;
+  }
+  .map-page .relation-remove {
+    min-height: 46px;
+  }
+  /* Panel ochilganda pastdagi oqim paneli xalaqit bermasin. */
+  .map-page .workspace:has(.relation-panel) .flow-panel {
+    display: none;
+  }
+}
+
+/* Telefonda yon panelda faqat eng kerakli ikkita boshqaruv qoladi;
+   yozuvlar va makon ohangi "⋯" varag‘iga ko‘chadi. Ilgari ular
+   gorizontal siljish ortida — ekrandan tashqarida qolib ketardi. */
+@media (max-width: 760px) {
+  .map-page.has-mobile-actions .rail-theme,
+  .map-page.has-mobile-actions #railNotes {
+    display: none;
+  }
+  .map-page.has-mobile-actions .map-rail {
+    overflow-x: visible;
+  }
+  .map-page .title-row input {
+    min-height: 44px;
+  }
+}
+
+.mobile-actions-label {
+  margin: 6px 2px 2px;
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.mobile-swatches {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.mobile-swatch {
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.mobile-swatch.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.mobile-swatch[data-space='paper'] {
+  background: linear-gradient(135deg, #e7e0d4, #f3eee4);
+}
+.mobile-swatch[data-space='mist'] {
+  background: linear-gradient(135deg, #ccd8d8, #e8e3db);
+}
+.mobile-swatch[data-space='sand'] {
+  background: linear-gradient(135deg, #d9c2a0, #eee0c9);
+}
+.mobile-swatch[data-space='night'] {
+  background: linear-gradient(135deg, #31332f, #49483f);
+}
+.mobile-swatch[data-space='ink'] {
+  background: linear-gradient(135deg, #252b2c, #3a4140);
 }

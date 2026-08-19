@@ -420,3 +420,31 @@ textarea::placeholder {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Telefon uchun: barmoqqa mos o'lchamlar va iOS zoomining oldini olish. */
+@media (max-width: 760px) {
+  input,
+  textarea {
+    font-size: 16px;
+  }
+  button,
+  .cta,
+  .finish,
+  .ghost-button {
+    min-height: 44px;
+  }
+  nav .logo {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .skip-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  main {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+}

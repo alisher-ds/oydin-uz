@@ -267,3 +267,97 @@ dialog::backdrop {
     display: none;
   }
 }
+
+/* ==========================================================================
+   Telefon uchun asosiy qoidalar
+   ==========================================================================
+   Uchala sahifada ham amal qiladi. Auditda topilgan muammolar:
+   barmoq uchun juda kichik tugmalar (30–40px), 16px dan kichik shrift
+   (iOS fokusda sahifani kattalashtirib yuboradi) va notchli ekranlarda
+   chetga yopishib qolgan kontent.
+   ========================================================================== */
+
+@media (max-width: 760px) {
+  /* iOS kiritish maydoniga fokuslanganda sahifani kattalashtirmasin. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  /* Barmoq uchun eng kichik qulay o‘lcham — 44px. */
+  button,
+  [role='button'],
+  .icon-button,
+  .soft-button,
+  .primary-button,
+  .outline-button,
+  .text-button {
+    min-height: 44px;
+  }
+  .icon-button {
+    min-width: 44px;
+  }
+
+  /* Brend havolasi va sinxronizatsiya belgisi ham bosiladigan o‘lchamda. */
+  .brand {
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+  .sync-status {
+    min-width: 44px;
+    justify-content: center;
+  }
+
+  /* Navigatsiya havolalari ham bosiladigan bo‘lsin. */
+  .topnav-link,
+  .map-center-nav .topnav-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 12px;
+  }
+
+  /* Dialoglar telefonda deyarli butun ekranni egallasin. */
+  dialog {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 24px);
+    border-radius: 18px;
+  }
+  .product-dialog,
+  .confirm-body {
+    padding: 22px 18px;
+  }
+  .dialog-close {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Vault kaliti telefonda ustma-ust joylashsin. */
+  .vault-token-row > button {
+    width: 100%;
+  }
+  .vault-footer > button {
+    width: 100%;
+  }
+}
+
+/* Notchli va yumaloq burchakli ekranlar uchun xavfsiz maydon. */
+@supports (padding: max(0px)) {
+  .site-shell,
+  .map-shell {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  .flow-panel {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* "Asosiy kontentga o‘tish" havolasi ham barmoqqa mos. */
+.skip-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}

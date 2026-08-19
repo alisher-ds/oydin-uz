@@ -11,6 +11,7 @@ import {
   clickHitTested,
   collectErrors,
   openCardActions,
+  pickSpaceTone,
   seedMap
 } from './helpers.js';
 
@@ -118,7 +119,7 @@ test.describe('Makon: asosiy oqim', () => {
     await page.goto('/map.html');
     await page.waitForTimeout(500);
 
-    await page.locator('.swatch[data-space="ink"]').click();
+    await pickSpaceTone(page, 'ink');
     await expect(page.locator('#workspace')).toHaveClass(/space-ink/);
     await expect(page.locator('#spaceName')).toHaveText('Siyoh makon');
 

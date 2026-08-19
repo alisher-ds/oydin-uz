@@ -14,6 +14,7 @@ import { createCamera } from './camera.js';
 import { createCardLayer } from './cards.js';
 import { createConnectionLayer } from './connections.js';
 import { createDialogs } from './dialogs.js';
+import { createMobileActions } from './mobile-actions.js';
 import { createThinkingLayer } from './thinking.js';
 import { createTools } from './tools.js';
 import { autoLayout, fitToView } from './geometry.js';
@@ -330,11 +331,22 @@ export function initMapPage() {
     }
   }
 
+  /**
+   * Asboblar paneli tagida qolgan kartaning amallar paneli bosilmaydi.
+   * Shuning uchun panelning haqiqiy pastki chegarasini o'lchaymiz.
+   */
+  function safeTopOffset() {
+    const toolbar = $('.workspace-toolbar');
+    if (!toolbar) return 52;
+    const workspaceTop = workspace.getBoundingClientRect().top;
+    return Math.max(52, toolbar.getBoundingClientRect().bottom - workspaceTop + 10);
+  }
+
   function render() {
     const list = cards();
     const view = thinking.focusView();
 
-    cardLayer.render(list, { connectingFrom, ...view });
+    cardLayer.render(list, { connectingFrom, safeTop: safeTopOffset(), ...view });
     connectionLayer.resize(canvas.clientWidth, canvas.clientHeight);
     connectionLayer.render(connections());
 
@@ -518,6 +530,8 @@ export function initMapPage() {
   });
 
   tools.mountToolbar();
+  // Telefonda ortiqcha tugmalarni ixcham varaqqa yig'amiz.
+  createMobileActions();
   loadMap();
   requestAnimationFrame(fitView);
 
