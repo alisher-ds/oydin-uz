@@ -367,6 +367,63 @@ test.describe('A1/A2 — foydalanish imkoniyati', () => {
     }
   });
 
+  /**
+   * "Oydin bilan gaplashish" ko'rinadigan AMAL bo'lib qolsin.
+   *
+   * Bu tugma bir vaqtlar `.text-button` edi: 11px, `--muted` rangda.
+   * Brauzerda o'lchangan kontrasti 4.05:1 — kichik matn uchun kerakli
+   * 4.5 dan past. Ekranda u atigi 19px balandlikni egallardi va
+   * harakat emas, izoh bo'lib ko'rinardi.
+   *
+   * Test haqiqatan ushlashi tekshirilgan: eski sinf qaytarilsa, u
+   * "light: kontrast, Expected >= 4.5, Received 4.05" bilan tushadi.
+   */
+  test('AI suhbat tugmasi ko‘rinadigan amal bo‘lib qoladi', async ({ page }) => {
+    for (const scheme of ['light', 'dark']) {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
+
+      const measured = await page.evaluate(() => {
+        const channels = value => {
+          const numbers = value.match(/[\d.]+/g).map(Number);
+          return value.startsWith('color(')
+            ? numbers.slice(0, 3).map(part => part * 255)
+            : numbers.slice(0, 3);
+        };
+        const luminance = ([r, g, b]) => {
+          const channel = part => {
+            const ratio = part / 255;
+            return ratio <= 0.03928 ? ratio / 12.92 : ((ratio + 0.055) / 1.055) ** 2.4;
+          };
+          return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+        };
+        const button = document.querySelector('#oydinAiOpen');
+        const style = getComputedStyle(button);
+        const [light, dark] = [
+          luminance(channels(style.color)),
+          luminance(channels(style.backgroundColor))
+        ].sort((a, b) => b - a);
+
+        return {
+          contrast: (light + 0.05) / (dark + 0.05),
+          height: Math.round(button.getBoundingClientRect().height),
+          fontSize: parseFloat(style.fontSize)
+        };
+      });
+
+      expect(measured.contrast, `${scheme}: kontrast`).toBeGreaterThanOrEqual(4.5);
+      expect(measured.height, `${scheme}: balandlik`).toBeGreaterThanOrEqual(44);
+      expect(measured.fontSize, `${scheme}: shrift`).toBeGreaterThanOrEqual(12);
+    }
+
+    // Ko'rinishi o'zgardi — vazifasi emas.
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(600);
+    await page.locator('#oydinAiOpen').click();
+    await expect(page.locator('.ai-dialog')).toBeVisible();
+  });
+
   test('har bir sahifada "asosiy kontentga o‘tish" havolasi bor', async ({ page }) => {
     for (const path of ['/index.html', '/map.html']) {
       // Tashqi shriftlar tarmoqsiz muhitda `load` hodisasini kechiktiradi.
