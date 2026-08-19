@@ -10,24 +10,33 @@ sifatida koʻrish mumkin boʻladi.
 
 ---
 
-## Uch sahifa
+## Ikki sahifa
 
-| Sahifa                        | Nima qiladi                                            |
-| ----------------------------- | ------------------------------------------------------ |
-| **Oydin** (`index.html`)      | Bosh sahifa va AI suhbat oynasi                        |
-| **Oqim** (`oqim.html`)        | Fikrni tez yozib qoʻyish; keyin Makonga koʻchiriladi   |
-| **Makon** (`map.html`)        | Asosiy ish maydoni: kartalar, aloqalar, fokus rejimi   |
-| **Bir daqiqa** (`birdaqiqa/`) | 60 soniyalik erkin yozuv va undagi signalni koʻrsatish |
+| Sahifa                   | Nima qiladi                                          |
+| ------------------------ | ---------------------------------------------------- |
+| **Oydin** (`index.html`) | Bosh sahifa va AI suhbat oynasi                      |
+| **Makon** (`map.html`)   | Asosiy ish maydoni: kartalar, aloqalar, fokus rejimi |
+
+Ilgari beshta alohida sahifa bor edi (Oqim, Bir daqiqa, Tez yozish) va
+uchtasi bir xil ishni — fikrni yozib qoʻyishni — qilardi. Ular bitta
+**Tez yozish** panelida birlashtirildi: u Makon ichida, oʻng paneldagi
+tugma yoki `T` klavishi bilan ochiladi. Fikrni yozish uchun endi sahifadan
+chiqish shart emas.
 
 ## Imkoniyatlar
 
 - Fikrlarni yaratish, tahrirlash, koʻchirish va bogʻlash
 - Aloqalarga tur berish: davomi · sabab · natija · qarama-qarshi · izoh
+- **Tez yozish** — Makondan chiqmasdan fikr yozib qoʻyish, qidirish,
+  tahrirlash va istagan payt makonga joylashtirish
+- **Eski fikrni qaytarish** — unutilgan yozuv vaqti-vaqti bilan oʻzi
+  yuzaga chiqadi (kuniga bir marta, faqat ancha eskilari)
 - Fokus rejimi — bitta fikr va uning bevosita qoʻshnilarini ajratib koʻrish
 - Pan, zoom, pinch-zoom; ekranga sigʻdirish va avtomatik joylashtirish
 - Bir nechta makon, qidiruv, bekor qilish (Ctrl+Z), JSON eksport/import
 - Yorugʻ va tungi rejim (tizim sozlamasiga ergashadi), 5 ta makon ohangi
 - Telefon uchun moslashtirilgan: barcha amallar "⋯" varagʻida, 44px tugmalar
+- Bosh ekranga oʻrnatiladi (PWA) va internetsiz ochiladi
 - Toʻliq klaviatura boshqaruvi va ekran oʻquvchilari uchun qoʻllab-quvvatlash
 - Maʼlumot brauzerda saqlanadi + IndexedDB zaxirasi + ixtiyoriy sinxronizatsiya
 
@@ -36,6 +45,7 @@ sifatida koʻrish mumkin boʻladi.
 | Klavish               | Amal                                                                                                        |
 | --------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `N` yoki `Ctrl/Cmd+K` | Yangi fikr                                                                                                  |
+| `T`                   | Tez yozish panelini ochish                                                                                  |
 | `/`                   | Makon ichidan qidirish                                                                                      |
 | `F`                   | Hammasini ekranga sigʻdirish                                                                                |
 | `Ctrl/Cmd+Z`          | Bekor qilish                                                                                                |
@@ -57,10 +67,6 @@ HTML, CSS (custom properties, `color-mix`), JavaScript, SVG.
 | `GET /api/health` | Xizmat holati                                           |
 
 **Maʼlumot** — Cloudflare D1 (SQLite). Sxema `migrations/` papkasida.
-
-**Brauzerdagi AI** — "Bir daqiqa" sahifasi `@xenova/transformers` orqali
-embedding modelini foydalanuvchi qurilmasida ishga tushiradi. Matn qurilmadan
-chiqmaydi.
 
 ## Lokal ishga tushirish
 
@@ -118,17 +124,20 @@ CI har push va pull requestda shularning barchasini ishga tushiradi
 ## Loyiha tuzilishi
 
 ```
+index.html    Oydin — bosh sahifa va AI suhbat
+map.html      Makon — asosiy ish maydoni
 assets/
-  css/      tokens · base · components · map · oqim · ai · bir-daqiqa
+  css/      tokens · base · components · map · ai
   js/
-    core/       dom · storage · events · theme
+    core/       dom · storage · events · theme · pwa · notes · recall
     map/        state · geometry · camera · cards · connections · dialogs
-                thinking · tools · mobile-actions
-    oqim/ ai/ landing/ sync/ bir-daqiqa/
-    boot-*.js   har sahifaning kirish nuqtasi
+                thinking · tools · mobile-actions · tez-panel · recall-bar
+    ai/ landing/ sync/
+    boot-landing.js · boot-map.js   har sahifaning kirish nuqtasi
 functions/    Cloudflare Pages Functions (API)
   _lib/schema.js  sxema bootstrap — jadvallarni avtomatik yaratadi
 migrations/   D1 sxemasi (bootstrap bilan mosligini test tekshiradi)
+sw.js         service worker — internetsiz ishlash uchun
 tests/
   unit/       node:test
   e2e/        Playwright
@@ -144,6 +153,7 @@ _headers      CSP va boshqa himoya sarlavhalari
   nusxaga kirish imkoni qolmaydi. Kalitni yuqoridagi sinxronizatsiya
   koʻrsatkichini bosib koʻrasiz.
 - Server hech qanday shaxsiy maʼlumot (email, ism, parol) soʻramaydi.
+- Saytda hech qanday tashqi kuzatuv (analytics, reklama, cookie) yoʻq.
 
 ## Holat
 
