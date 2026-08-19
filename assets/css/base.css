@@ -221,6 +221,46 @@ select {
 .primary-button.compact {
   padding: 11px 14px;
 }
+
+/*
+ * "Oydin bilan gaplashish" — ikkinchi darajali AMAL.
+ *
+ * Ilgari u `.text-button` edi: 11px, `--muted` rangda, "Oydin qanday
+ * ishlaydi" havolasi bilan yonma-yon. Natijada u harakat emas, izoh
+ * bo'lib ko'rinardi — va ekranda atigi 19px balandlikni egallardi.
+ *
+ * Endi asosiy tugma bilan bir balandlikda, lekin TO'LDIRILMAGAN:
+ * ierarxiya saqlanadi ("Makonni ochish" birinchi bo'lib qoladi), amal
+ * esa ko'rinadi. Aksent rang faqat ramka va fonda — matn `--ink`,
+ * chunki aksentning o'zi qog'oz fonda kichik matn uchun kerakli
+ * kontrastni bermaydi.
+ */
+.chat-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, var(--line));
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 13px 16px;
+  font: 800 12px var(--font-sans);
+  cursor: pointer;
+  transition: 0.2s;
+}
+.chat-button:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 20%, var(--panel));
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.chat-button span {
+  margin-left: 22px;
+  font-size: 17px;
+  /* Aksentga moyil, lekin siyoh tomon tortilgan: sof aksent tungi
+     rejimda o'z foniga nisbatan 2.6:1 bo'lib qolardi. */
+  color: color-mix(in srgb, var(--accent-2) 62%, var(--ink));
+}
 .text-button {
   text-decoration: underline;
   text-underline-offset: 5px;
