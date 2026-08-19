@@ -26,6 +26,7 @@
 
 import { checkLimit, guard, ipBucket, json } from '../_lib/guard.js';
 import { ensureSchema } from '../_lib/schema.js';
+import { renderStatsPage } from '../_lib/stats-page.js';
 
 /**
  * Ruxsat etilgan hodisalar. Bu ro'yxat `assets/js/core/stat.js` dagi
@@ -127,7 +128,13 @@ export async function onRequestPost({ request, env }) {
  * tasodifan ochiq qolib ketmaydi:
  *
  *     npx wrangler pages secret put STATS_TOKEN
- *     curl "https://oydin-uz.pages.dev/api/stat?token=..."
+ *
+ * Brauzerda ochilsa — o'qiladigan sahifa, dastur so'rasa — JSON. Ya'ni
+ * bitta manzil ikkala ehtiyojni ham qoplaydi va saytga uchinchi sahifa
+ * qo'shilmaydi:
+ *
+ *     https://oydin-uz.pages.dev/api/stat?token=...        (sahifa)
+ *     curl "https://oydin-uz.pages.dev/api/stat?token=..." (JSON)
  */
 export async function onRequestGet({ request, env }) {
   const limited = await checkLimit(env, await ipBucket(request, env, 'stat-read'), 30, 60);
@@ -160,6 +167,19 @@ export async function onRequestGet({ request, env }) {
     for (const row of results) {
       (byDay[row.day] ??= {})[row.event] = Number(row.hits);
       total[row.event] = (total[row.event] ?? 0) + Number(row.hits);
+    }
+
+    // Brauzer HTML so'raydi, `curl` va skriptlar — yo'q.
+    const wantsHtml = (request.headers.get('accept') || '').includes('text/html');
+    if (wantsHtml) {
+      return new Response(renderStatsPage({ days, since, total, byDay }), {
+        headers: {
+          'content-type': 'text/html; charset=utf-8',
+          'cache-control': 'no-store',
+          'x-robots-tag': 'noindex, nofollow',
+          'referrer-policy': 'no-referrer'
+        }
+      });
     }
 
     return json({ since, days, jami: total, kunlar: byDay });
