@@ -167,15 +167,20 @@ async function discoverModels(key) {
     if (!response.ok) return [];
 
     const data = await response.json();
-    const names = (Array.isArray(data?.models) ? data.models : [])
+    const all = (Array.isArray(data?.models) ? data.models : [])
       .filter(model => model?.supportedGenerationMethods?.includes?.('generateContent'))
       .map(model => String(model?.name ?? '').replace(/^models\//, ''))
-      .filter(name => name && !UNUSABLE.test(name));
+      .filter(Boolean);
+    const names = all.filter(name => !UNUSABLE.test(name));
 
-    names.sort((a, b) => scoreModel(b) - scoreModel(a));
+    // Filtr hech narsa qoldirmasa, o'z filtrimizga ishonmay kengroq
+    // ro'yxatni olamiz: noto'g'ri filtr tufayli "model yo'q" holatiga
+    // tushib qolgandan ko'ra, biror modelni sinab ko'rgan afzal.
+    const usable = names.length ? names : all;
+    usable.sort((a, b) => scoreModel(b) - scoreModel(a));
     // Keshni shu yerda yozamiz: bu funksiya keshni o'qimaydi, shuning uchun
     // `await` atrofida eskirgan qiymat ustiga yozish xavfi yo'q.
-    cache.discovered = names.slice(0, 4);
+    cache.discovered = usable.slice(0, 4);
     return cache.discovered;
   } catch (error) {
     console.error('Model ro‘yxatini olib bo‘lmadi:', error);
@@ -242,7 +247,17 @@ async function generateReply(key, prompt) {
   if (second) return second;
   if (fatal) return fatal;
 
-  return { ok: false, status: 502, reason: failures[0] ?? 'noma’lum', failures };
+  // Hammasi yiqilsa, kalit ko'ra oladigan modellarni ham aytamiz — shunda
+  // to'g'ri nomni taxmin qilish shart bo'lmaydi, xato o'zi ko'rsatadi.
+  const available = cache.discovered?.length
+    ? ` (kalit ko‘radigan modellar: ${cache.discovered.join(', ')})`
+    : '';
+  return {
+    ok: false,
+    status: 502,
+    reason: `${failures[0] ?? 'noma’lum'}${available}`,
+    failures
+  };
 }
 
 async function resolveVault(env, token) {
