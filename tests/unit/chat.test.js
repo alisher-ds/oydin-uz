@@ -44,12 +44,12 @@ const fakeEnv = () => ({
 });
 
 const makeRequest = (messages = [{ role: 'user', text: 'ML darsimni qilishim kerak' }]) =>
-  new Request('https://oydin.uz/api/chat', {
+  new Request('https://oydin-uz.pages.dev/api/chat', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
       'X-Oydin-Vault': VAULT_TOKEN,
-      Origin: 'https://oydin.uz'
+      Origin: 'https://oydin-uz.pages.dev'
     },
     body: JSON.stringify({ messages })
   });
@@ -143,9 +143,9 @@ describe('/api/chat', () => {
 
   it('vault tokensiz 401 qaytaradi', async () => {
     mockFetch([]);
-    const request = new Request('https://oydin.uz/api/chat', {
+    const request = new Request('https://oydin-uz.pages.dev/api/chat', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', Origin: 'https://oydin.uz' },
+      headers: { 'content-type': 'application/json', Origin: 'https://oydin-uz.pages.dev' },
       body: JSON.stringify({ messages: [{ role: 'user', text: 'salom' }] })
     });
     const response = await onRequestPost({ request, env: fakeEnv() });
@@ -261,6 +261,52 @@ describe('/api/chat', () => {
         !calls.some(call => call.url.includes('/v1beta/models?')),
         'sabab modelda emas — ro‘yxat so‘rash ortiqcha'
       );
+    });
+  });
+
+  describe('domenga bog‘liq emas', () => {
+    // Loyihada hozircha o'z domeni yo'q — sayt `oydin-uz.pages.dev` da
+    // turadi, preview'lar esa har safar boshqa manzilda ochiladi.
+    // Shuning uchun origin tekshiruvi qat'iy domenga emas, so'rovning
+    // O'Z manziliga solishtiriladi. Bu testlar shu xususiyatni
+    // qo'riqlaydi: kimdir domenni kodga yozib qo'ysa, ular yiqiladi.
+    const requestFrom = host =>
+      new Request(`${host}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'X-Oydin-Vault': VAULT_TOKEN,
+          Origin: host
+        },
+        body: JSON.stringify({ messages: [{ role: 'user', text: 'salom' }] })
+      });
+
+    for (const host of [
+      'https://oydin-uz.pages.dev',
+      'https://1933f5e7.oydin-uz.pages.dev',
+      'https://oydin.uz',
+      'http://127.0.0.1:8788'
+    ]) {
+      it(`${host} dan kelgan so‘rov qabul qilinadi`, async () => {
+        mockFetch([{ status: 200, body: okReply('{"reply":"Salom"}') }]);
+        const response = await onRequestPost({ request: requestFrom(host), env: fakeEnv() });
+        assert.equal(response.status, 200);
+      });
+    }
+
+    it('boshqa saytdan kelgan so‘rov RAD ETILADI', async () => {
+      mockFetch([]);
+      const request = new Request('https://oydin-uz.pages.dev/api/chat', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'X-Oydin-Vault': VAULT_TOKEN,
+          Origin: 'https://boshqa-sayt.example'
+        },
+        body: JSON.stringify({ messages: [{ role: 'user', text: 'salom' }] })
+      });
+      const response = await onRequestPost({ request, env: fakeEnv() });
+      assert.equal(response.status, 403);
     });
   });
 });
