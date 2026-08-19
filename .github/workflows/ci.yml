@@ -1,8 +1,13 @@
 name: CI
 
+# `push` faqat `main` uchun. Ilgari u barcha tarmoqlarga ishlagan va
+# `pull_request` bilan birga har bir PR uchun CI IKKI MARTA ishlagan —
+# bir xil ishni ikki marta bajarib, limitni bekorga sarflagan.
+# Endi: tarmoqni PR qoplaydi, `main` ni push qoplaydi. Qo'lda ishga
+# tushirish kerak bo'lsa — `workflow_dispatch`.
 on:
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
