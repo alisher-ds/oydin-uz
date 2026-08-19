@@ -65,6 +65,18 @@ export default [
     }
   },
   {
+    // Brauzerdagi service worker: `clients`, `skipWaiting` kabi global'lar
+    // faqat shu muhitda mavjud. Aniq belgilanmasa, `no-undef` ularni
+    // xato deb ushlamaydi ham, tekshirmaydi ham.
+    files: ['sw.js'],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'script',
+      globals: { ...globals.serviceworker }
+    },
+    rules: shared
+  },
+  {
     // Cloudflare Pages Functions (Workers runtime).
     files: ['functions/**/*.js'],
     languageOptions: {

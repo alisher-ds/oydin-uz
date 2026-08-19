@@ -215,9 +215,14 @@ test.describe('"Bir daqiqa" ga yo‘l', () => {
     await page.goto('/map.html');
     await expect(page.locator('.map-center-nav')).toBeHidden();
 
+    // Varaqdagi havolalar soni navigatsiyadan olinadi: joriy sahifadan
+    // boshqa hammasi ko'rinishi kerak. Qat'iy raqam yozilsa, navigatsiyaga
+    // yangi sahifa qo'shilganda test sababsiz yiqiladi.
+    const expected = await page.locator('.map-center-nav .topnav-link:not(.active)').count();
+    expect(expected).toBeGreaterThan(0);
+
     await page.locator('.mobile-actions-trigger button').click();
-    const pages = page.locator('.mobile-action-page');
-    await expect(pages).toHaveCount(3);
+    await expect(page.locator('.mobile-action-page')).toHaveCount(expected);
     await expect(page.locator('.mobile-action-page[href="/birdaqiqa/"]')).toBeVisible();
 
     await page.locator('.mobile-action-page[href="/birdaqiqa/"]').click();

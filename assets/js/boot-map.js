@@ -9,8 +9,10 @@ import { recoverMissing } from './core/storage.js';
 import { initMapPage } from './map/index.js';
 import { startSync } from './sync/client.js';
 import { mountSyncUI } from './sync/ui.js';
+import { registerServiceWorker } from './core/pwa.js';
 
 await recoverMissing();
 initMapPage();
 mountSyncUI();
 startSync();
+registerServiceWorker();

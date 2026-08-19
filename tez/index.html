@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f6f2ea" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!--
+      Bu sahifada TASHQI SHRIFT ATAYLAB YO'Q.
+      Google Fonts render'ni to'sadi: DNS + TLS + so'rov — sekin tarmoqda
+      bu bir necha soniya. Bu yerda maqsad bitta: fikr kelganda kursor
+      allaqachon turgan bo'lsin. Shuning uchun tizim shriftlari.
+    -->
+    <meta name="description" content="Fikrni bir zumda yozib qo‘yish." />
+    <title>Tez yozish — Oydin</title>
+    <link rel="stylesheet" href="/assets/css/tez.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#fikr">Yozish maydoniga o‘tish</a>
+
+    <main class="tez">
+      <header class="tez-head">
+        <a class="tez-brand" href="/index.html" aria-label="Oydin bosh sahifa">
+          <span class="brand-symbol" aria-hidden="true"
+            ><svg viewBox="0 0 64 64">
+              <mask id="tezCut">
+                <rect width="64" height="64" fill="#fff" />
+                <rect
+                  x="-10"
+                  y="30.7"
+                  width="84"
+                  height="3.2"
+                  fill="#000"
+                  transform="rotate(-32 32 32)"
+                />
+              </mask>
+              <clipPath id="tezLower">
+                <rect x="-10" y="33.9" width="84" height="44" transform="rotate(-32 32 32)" />
+              </clipPath>
+              <g mask="url(#tezCut)">
+                <path
+                  class="brand-arc"
+                  fill-rule="evenodd"
+                  d="M8 32a24 24 0 1 0 48 0a24 24 0 1 0 -48 0ZM23.0 29.5a11.5 11.5 0 1 0 23.0 0a11.5 11.5 0 1 0 -23.0 0Z"
+                />
+                <g clip-path="url(#tezLower)">
+                  <path
+                    class="brand-arc-accent"
+                    fill-rule="evenodd"
+                    d="M8 32a24 24 0 1 0 48 0a24 24 0 1 0 -48 0ZM23.0 29.5a11.5 11.5 0 1 0 23.0 0a11.5 11.5 0 1 0 -23.0 0Z"
+                  />
+                </g>
+              </g></svg
+          ></span>
+        </a>
+        <p class="tez-state" id="tezState" role="status" aria-live="polite"></p>
+      </header>
+
+      <form class="tez-form" id="tezForm">
+        <label class="visually-hidden" for="fikr">Fikringiz</label>
+        <textarea
+          id="fikr"
+          name="fikr"
+          rows="3"
+          autofocus
+          autocomplete="off"
+          autocapitalize="sentences"
+          spellcheck="false"
+          placeholder="Fikr…"
+        ></textarea>
+
+        <div class="tez-row">
+          <button class="tez-mic" id="tezMic" type="button" hidden aria-pressed="false">
+            <span aria-hidden="true">🎙</span>
+            <span class="tez-mic-text">Ovoz</span>
+          </button>
+          <button class="tez-save" id="tezSave" type="submit">
+            Saqlash <kbd aria-hidden="true">⏎</kbd>
+          </button>
+        </div>
+      </form>
+
+      <section class="tez-recent" aria-label="Kiruvchidagi fikrlar">
+        <div class="tez-recent-head">
+          <p class="tez-label" id="tezCount">Kiruvchi bo‘sh</p>
+          <a class="tez-link" href="/map.html">Makonga o‘tish →</a>
+        </div>
+        <ul class="tez-list" id="tezList"></ul>
+      </section>
+    </main>
+
+    <script type="module" src="/assets/js/boot-tez.js"></script>
+  </body>
+</html>

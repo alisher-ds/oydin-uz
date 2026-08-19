@@ -5,6 +5,15 @@
 * {
   box-sizing: border-box;
 }
+/* `hidden` atributi HAR DOIM ishlasin.
+   Brauzerning o'z qoidasi `[hidden] { display: none }` juda kuchsiz:
+   komponent klassi `display` bersa (grid, flex va h.k.), element
+   `hidden` bo'lsa ham ko'rinib turaveradi. Bu jimgina yuz beradigan
+   xato — element DOM'da yashiringan deb o'ylaysiz, ekranda esa turibdi. */
+[hidden] {
+  display: none !important;
+}
+
 html {
   /* Global `scroll-behavior: smooth` OLIB TASHLANDI.
      U har bir dasturiy `scrollIntoView` ni ham animatsiyaga aylantiradi:
