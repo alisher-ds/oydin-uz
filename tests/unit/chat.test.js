@@ -310,3 +310,125 @@ describe('/api/chat', () => {
     });
   });
 });
+
+/**
+ * Umumiy kunlik chegara.
+ *
+ * Vault-boshiga chegara yolg'iz o'zi provayder kvotasini himoya
+ * qilmaydi: vaultlar anonim va bepul, ya'ni ularni ko'paytirib chegarani
+ * xohlagancha kengaytirish mumkin. Bu hisoblagich esa vaultlar sonidan
+ * qat'i nazar ishlaydi.
+ */
+describe('umumiy kunlik chegara', () => {
+  /** Bugungi oyna boshlanishi — "peek" aynan shu bilan solishtiradi. */
+  const windowStart = () => {
+    const seconds = Math.floor(Date.now() / 1000);
+    return seconds - (seconds % 86_400);
+  };
+
+  /**
+   * D1 o'rnini bosuvchi: umumiy hisoblagich to'lgan holatni yasaydi va
+   * qaysi bucket'lar OSHIRILGANINI yozib boradi.
+   */
+  const saturatedEnv = () => {
+    const bumped = [];
+    return {
+      bumped,
+      env: {
+        GEMINI_API_KEY: 'test-key',
+        OYDIN_DB: {
+          prepare(sql) {
+            let bucket = null;
+            return {
+              bind(...args) {
+                bucket = args[0];
+                return this;
+              },
+              async first() {
+                if (sql.includes('FROM vaults')) return { id: 'vault_1' };
+                // "Peek": umumiy hisoblagich to'lgan.
+                if (sql.startsWith('SELECT hits')) {
+                  return bucket === 'global:chat-day'
+                    ? { hits: 10_000, window_start: windowStart() }
+                    : null;
+                }
+                if (sql.includes('INSERT INTO rate_limits')) {
+                  bumped.push(bucket);
+                  return { hits: 1 };
+                }
+                return null;
+              },
+              async run() {
+                return { success: true };
+              }
+            };
+          },
+          async batch(statements) {
+            return statements.map(() => ({ results: [] }));
+          }
+        }
+      }
+    };
+  };
+
+  it('kvota tugaganda 429 qaytaradi', async () => {
+    const { env } = saturatedEnv();
+    const calls = mockFetch([]);
+
+    const response = await onRequestPost({ request: makeRequest(), env });
+
+    assert.equal(response.status, 429);
+    assert.match((await response.json()).error, /band/i);
+    assert.equal(calls.length, 0, 'Gemini‘ga so‘rov ketmasligi kerak');
+  });
+
+  it('kvota tugaganda foydalanuvchining SHAXSIY hisobiga tegilmaydi', async () => {
+    const { env, bumped } = saturatedEnv();
+    mockFetch([]);
+
+    await onRequestPost({ request: makeRequest(), env });
+
+    // Faqat `guard()` ning IP hisoblagichi oshishi mumkin; vaultning
+    // kunlik va daqiqalik hisobiga tegilmasligi SHART.
+    const vaultBuckets = bumped.filter(bucket => String(bucket).startsWith('vault:'));
+    assert.deepEqual(vaultBuckets, [], `shaxsiy hisob yeb qo‘yildi: ${vaultBuckets}`);
+  });
+
+  it('kvota bo‘sh bo‘lsa so‘rov o‘tadi va umumiy hisob oshadi', async () => {
+    const bumped = [];
+    const env = {
+      GEMINI_API_KEY: 'test-key',
+      OYDIN_DB: {
+        prepare(sql) {
+          let bucket = null;
+          return {
+            bind(...args) {
+              bucket = args[0];
+              return this;
+            },
+            async first() {
+              if (sql.includes('FROM vaults')) return { id: 'vault_1' };
+              if (sql.includes('INSERT INTO rate_limits')) {
+                bumped.push(bucket);
+                return { hits: 1 };
+              }
+              return null;
+            },
+            async run() {
+              return { success: true };
+            }
+          };
+        },
+        async batch(statements) {
+          return statements.map(() => ({ results: [] }));
+        }
+      }
+    };
+    mockFetch([{ status: 200, body: okReply('Mayli, boshlaymiz.') }]);
+
+    const response = await onRequestPost({ request: makeRequest(), env });
+
+    assert.equal(response.status, 200);
+    assert.ok(bumped.includes('global:chat-day'), 'umumiy hisoblagich oshmadi');
+  });
+});

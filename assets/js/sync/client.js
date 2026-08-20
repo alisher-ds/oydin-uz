@@ -44,11 +44,30 @@ let queued = false;
 let timer = 0;
 let failures = 0;
 
-async function runSync({ keepalive = false } = {}) {
+async function runSync({ keepalive = false, create = false } = {}) {
+  const existing = getToken();
+
+  /*
+   * Vault YO'Q va uni yaratish so'ralmagan — so'rov umuman yuborilmaydi.
+   *
+   * Ilgari `startSync()` sahifa ochilishi bilan shartsiz so'rov yuborardi
+   * va server tokensiz so'rovga javoban HAR SAFAR yangi vault yaratardi.
+   * Natijada saytga kirgan har bir odam — hech narsa bosmasa ham, hech
+   * qachon sinxronizatsiyani yoqmasa ham — bazada doimiy qator qoldirardi.
+   * Bu "sinxronizatsiya ixtiyoriy" degan va'daga zid edi.
+   *
+   * Endi vault faqat ATAYLAB yaratiladi: foydalanuvchi kalitni so'raganda
+   * yoki AI suhbatiga birinchi savol yuborilganda.
+   */
+  if (!existing && !create) {
+    emit({ state: 'idle' });
+    return null;
+  }
+
   emit({ state: 'syncing' });
 
   try {
-    const token = getToken();
+    const token = existing;
     const spaces = normalizeList(readJson('oydin-maps', {}))
       .sort((a, b) => String(b.updatedAt ?? '').localeCompare(String(a.updatedAt ?? '')))
       .slice(0, MAX_SPACES);
@@ -107,7 +126,8 @@ async function runSync({ keepalive = false } = {}) {
 /**
  * Bir marta sinxronlaydi. Allaqachon ketayotgan so'rov bo'lsa, unga qo'shiladi
  * va tugagach yana bir marta rejalashtiradi.
- * @param {{keepalive?: boolean}} options
+ * @param {{keepalive?: boolean, create?: boolean}} options
+ *   `create: true` — vault hali yo'q bo'lsa, uni ATAYLAB yaratadi.
  */
 export function sync(options) {
   if (pending) {
@@ -140,6 +160,9 @@ export function useToken(token) {
   schedule(0);
   return true;
 }
+
+/** Sinxronizatsiyani ataylab yoqadi — vault shu paytda yaratiladi. */
+export const enableSync = () => sync({ create: true });
 
 /** Ushbu qurilmani vaultdan uzadi (ma'lumot lokalda qoladi). */
 export function forgetToken() {

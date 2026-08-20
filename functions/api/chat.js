@@ -59,7 +59,27 @@ export function __resetModelCache() {
 const MAX_TURNS = 16;
 const MAX_TURN_CHARS = 1800;
 const PER_MINUTE = 10;
-const PER_DAY = 200;
+/*
+ * Bitta vault uchun kunlik chegara.
+ *
+ * Ilgari 200 edi. Vault esa anonim va bepul: brauzer ma'lumotini
+ * tozalagan odam yangisini oladi, ya'ni 200 ni xohlagancha ko'paytirish
+ * mumkin edi. Bepul Gemini kvotasi uchun bu juda saxiy.
+ */
+const PER_DAY = 40;
+
+/*
+ * BARCHA vaultlar uchun umumiy kunlik chegara.
+ *
+ * Vault-boshiga chegara yolg'iz o'zi yetarli emas: vaultlar cheksiz
+ * yaratilishi mumkin, ya'ni ular soni ko'paygani sari umumiy sarf ham
+ * chegarasiz o'sadi. Bu hisoblagich esa provayder kvotasini himoya
+ * qiladi — u qancha vault bo'lishidan qat'i nazar ishlaydi.
+ *
+ * Hisoblagich D1 da, ya'ni butun dunyo bo'ylab bitta.
+ */
+const GLOBAL_PER_DAY = 600;
+const GLOBAL_BUCKET = 'global:chat-day';
 
 /** Gemini qabul qiladigan minimal sxema — ortiqcha maydonlarsiz. */
 const RESPONSE_SCHEMA = {
@@ -297,6 +317,22 @@ export async function onRequestPost({ request, env }) {
       );
     }
 
+    /*
+     * Umumiy chegara AVVAL va hisoblagichni OSHIRMASDAN tekshiriladi.
+     *
+     * Aks holda umumiy kvota tugagan paytda kelgan har bir so'rov
+     * foydalanuvchining shaxsiy kunlik hisobini ham yeb qo'yardi —
+     * garchi so'rov Gemini'ga umuman yetib bormagan bo'lsa ham.
+     */
+    const globalDay = await checkLimit(env, GLOBAL_BUCKET, GLOBAL_PER_DAY, 86_400, {
+      count: false
+    });
+    if (!globalDay.ok) {
+      return json({ error: 'Bugun AI juda band bo‘ldi. Ertaga yana ochiladi.' }, 429, {
+        'retry-after': String(globalDay.retryAfter)
+      });
+    }
+
     const [perMinute, perDay] = await Promise.all([
       checkLimit(env, `vault:${vault.id}:chat`, PER_MINUTE, 60),
       checkLimit(env, `vault:${vault.id}:chat-day`, PER_DAY, 86_400)
@@ -312,6 +348,9 @@ export async function onRequestPost({ request, env }) {
         { 'retry-after': String(perMinute.ok ? perDay.retryAfter : perMinute.retryAfter) }
       );
     }
+
+    // Hamma tekshiruv o'tdi — endi umumiy hisoblagichni oshiramiz.
+    await checkLimit(env, GLOBAL_BUCKET, GLOBAL_PER_DAY, 86_400);
 
     const body = await checked.readJson();
     const transcript = (Array.isArray(body.messages) ? body.messages : [])
