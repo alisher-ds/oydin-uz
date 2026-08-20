@@ -318,3 +318,49 @@ test.describe('Sinxronizatsiya ixtiyoriy', () => {
     expect(seen, 'yoqilganda vault yaratilishi kerak').toContain('POST');
   });
 });
+
+/**
+ * Service worker HAQIQATAN ro'yxatdan o'tadi.
+ *
+ * REGRESSIYA: `registerServiceWorker()` `load` hodisasiga tinglovchi
+ * qo'yardi, lekin o'zi `boot-map.js` dagi `await recoverMissing()` dan
+ * KEYIN chaqirilardi. Modul darajasidagi `await` qolgan kodni
+ * kechiktiradi — IndexedDB sekin javob bersa, `load` allaqachon o'tib
+ * ketgan bo'lardi va tinglovchi hech qachon ishlamasdi.
+ *
+ * Oqibati: ilova bosh ekranga o'rnatilmaydi, oflayn ishlamaydi va —
+ * eng yomoni — eski keshli qurilmada yangi SW faollashmaydi, ya'ni
+ * eski nusxa cheksiz qolib ketadi. Bir qurilmada ishlaydi, boshqasida
+ * yo'q.
+ */
+test.describe('Oflayn va o‘rnatish', () => {
+  for (const page_ of ['/map.html', '/index.html']) {
+    test(`${page_} — service worker ro‘yxatdan o‘tadi`, async ({ page }) => {
+      await asReturning(page);
+      await page.goto(page_, { waitUntil: 'domcontentloaded' });
+
+      await expect
+        .poll(
+          () => page.evaluate(() => navigator.serviceWorker.getRegistrations().then(r => r.length)),
+          { message: 'service worker ro‘yxatdan o‘tmadi', timeout: 10_000 }
+        )
+        .toBeGreaterThan(0);
+    });
+  }
+
+  test('kesh versiyasi sahifadagi modullar bilan mos', async ({ page, request }) => {
+    await asReturning(page);
+    await page.goto('/map.html', { waitUntil: 'domcontentloaded' });
+
+    // `sw.js` oldindan keshlaydigan har bir fayl haqiqatan yetkaziladi.
+    const source = await (await request.get('/sw.js')).text();
+    const list = [...source.matchAll(/'(\/[^']+)'/g)]
+      .map(m => m[1])
+      .filter(url => url.startsWith('/assets/') || url.endsWith('.html'));
+
+    for (const url of list) {
+      const response = await request.get(url);
+      expect(response.status(), `${url} yetkazilmadi`).toBe(200);
+    }
+  });
+});

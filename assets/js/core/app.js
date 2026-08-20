@@ -194,10 +194,28 @@ export function registerServiceWorker() {
   globalThis.addEventListener('appinstalled', () => track('ornatildi'));
 
   if (!('serviceWorker' in navigator)) return;
-  // Ro'yxatdan o'tkazish sahifa yuklanishini sekinlashtirmasin.
-  globalThis.addEventListener('load', () => {
+
+  const register = () => {
     navigator.serviceWorker.register('/sw.js').catch(error => {
       console.warn('Service worker ro‘yxatdan o‘tmadi:', error);
     });
-  });
+  };
+
+  /*
+   * DIQQAT, POYGA: bu funksiya `boot-map.js` da `await recoverMissing()`
+   * dan KEYIN chaqiriladi. Modul darajasidagi `await` esa qolgan kodni
+   * kechiktiradi — IndexedDB sekin javob bersa, `load` hodisasi allaqachon
+   * o'tib ketgan bo'ladi va unga qo'yilgan tinglovchi HECH QACHON
+   * ishlamaydi.
+   *
+   * Oqibati og'ir edi: service worker ro'yxatdan o'tmaydi, ya'ni ilova
+   * bosh ekranga o'rnatilmaydi va oflayn ishlamaydi. Bundan ham yomoni —
+   * eski keshga ega qurilmada yangi SW hech qachon faollashmaydi, ya'ni
+   * eski nusxa cheksiz saqlanib qoladi.
+   *
+   * Bu qurilmaga qarab turlicha namoyon bo'ladi: bir telefonda ishlaydi,
+   * bir noutbukda yo'q.
+   */
+  if (document.readyState === 'complete') register();
+  else globalThis.addEventListener('load', register, { once: true });
 }
