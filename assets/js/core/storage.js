@@ -12,7 +12,7 @@
  *  - har o'zgarish `oydin:data-changed` hodisasini yuboradi.
  */
 
-import { EVENTS } from './events.js';
+import { EVENTS } from './dom.js';
 
 const DB_NAME = 'oydin-storage';
 const STORE = 'snapshots';

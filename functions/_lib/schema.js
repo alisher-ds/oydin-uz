@@ -10,9 +10,9 @@
  * Barcha iboralar `IF NOT EXISTS` bilan, ya'ni takroriy chaqirish xavfsiz va
  * mavjud ma'lumotga tegmaydi. Har izolyatda faqat bir marta bajariladi.
  *
- * DIQQAT: bu yerdagi DDL `migrations/` papkasidagi bilan bir xil bo'lishi
- * shart. Buni `tests/unit/schema.test.js` avtomatik tekshiradi — ikkalasi
- * ajralib ketsa, CI qizil bo'ladi.
+ * Bu fayl sxemaning YAGONA manbai. Ilgari `migrations/` papkasi ham bor
+ * edi va ikkalasi bir xil bo'lishi kerak edi — endi ajralib ketadigan
+ * ikkinchi nusxa yo'q.
  */
 
 export const SCHEMA_STATEMENTS = Object.freeze([

@@ -29,7 +29,7 @@ import { ensureSchema } from '../_lib/schema.js';
 import { renderStatsPage } from '../_lib/stats-page.js';
 
 /**
- * Ruxsat etilgan hodisalar. Bu ro'yxat `assets/js/core/stat.js` dagi
+ * Ruxsat etilgan hodisalar. Bu ro'yxat `assets/js/core/app.js` dagi
  * `EVENTS` bilan bir xil bo'lishi shart — `tests/unit/stat.test.js`
  * ikkalasini solishtiradi va ajralib ketsa CI qizil bo'ladi.
  */

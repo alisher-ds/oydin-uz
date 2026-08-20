@@ -73,7 +73,9 @@ HTML, CSS (custom properties, `color-mix`), JavaScript, SVG.
 | `GET /api/health` | Xizmat holati                                           |
 | `POST /api/stat`  | Anonim statistika — faqat hodisa nomi                   |
 
-**Maʼlumot** — Cloudflare D1 (SQLite). Sxema `migrations/` papkasida.
+**Maʼlumot** — Cloudflare D1 (SQLite). Sxema `functions/_lib/schema.js` da:
+jadvallar birinchi API soʻrovida `CREATE TABLE IF NOT EXISTS` bilan
+avtomatik yaratiladi, qoʻlda migratsiya qadami yoʻq.
 
 ## Lokal ishga tushirish
 
@@ -97,13 +99,8 @@ npm run dev        # http://localhost:8788
 
 Baza jadvallari **avtomatik yaratiladi** — birinchi API soʻrovida
 `functions/_lib/schema.js` kerakli jadvallarni `CREATE TABLE IF NOT EXISTS`
-bilan tayyorlaydi. Qoʻlda migratsiya qilish shart emas.
-
-Sxemani ataylab boshqarmoqchi boʻlsangiz, migratsiyalar ham joyida:
-
-```bash
-npx wrangler d1 migrations apply oydin-db --local    # yoki --remote
-```
+bilan tayyorlaydi. Qoʻlda migratsiya qadami yoʻq va sxemaning ikkinchi
+nusxasi ham yoʻq — shu fayl yagona manba.
 
 AI suhbat uchun maxfiy kalit:
 
@@ -134,22 +131,21 @@ CI har push va pull requestda shularning barchasini ishga tushiradi
 index.html    Oydin — bosh sahifa va AI suhbat
 map.html      Makon — asosiy ish maydoni
 assets/
-  css/      tokens · base · components · map · ai
+  css/      tokens · base · components · map · stat
   js/
-    core/       dom · storage · events · theme · pwa · notes · recall
-                stat · backup-notice
+    core/       dom · storage · theme · notes · nudges · app · index
     map/        state · geometry · camera · cards · connections · dialogs
-                thinking · tools · mobile-actions · tez-panel · recall-bar
-                tour · toast · save-badge
-    ai/ landing/ sync/
+                thinking · tools · mobile-actions · tez-panel · notices
+                tour · index
+    ai/ sync/
     boot-landing.js · boot-map.js   har sahifaning kirish nuqtasi
 functions/    Cloudflare Pages Functions (API)
-  _lib/schema.js  sxema bootstrap — jadvallarni avtomatik yaratadi
-migrations/   D1 sxemasi (bootstrap bilan mosligini test tekshiradi)
+  _lib/       guard · vault · schema · stats-page
+  api/        sync · chat · stat · health
 sw.js         service worker — internetsiz ishlash uchun
 tests/
-  unit/       node:test
-  e2e/        Playwright
+  unit/       node:test — sof mantiq
+  e2e/        Playwright — brauzerdagi haqiqiy xatti-harakat
 _headers      CSP va boshqa himoya sarlavhalari
 ```
 

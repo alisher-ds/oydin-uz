@@ -157,9 +157,16 @@ test.describe('K2 — CSS sintaksis xatosi', () => {
     expect(hasShadow, '`box-shadow` e’loni parse qilinmadi').toBe(true);
   });
 
+  /**
+   * DIQQAT: ro'yxatda YO'Q fayl bo'lsa, bu test jimgina o'tib ketardi —
+   * 404 javobining matni ham qavslar bo'yicha muvozanatli chiqadi.
+   * Shuning uchun endi javobning o'zi ham tekshiriladi: fayl o'chirilsa
+   * yoki nomi o'zgarsa, test ovoz chiqarib tushadi.
+   */
   test('sahifada muvozanatsiz qavsli CSS yo‘q', async ({ request }) => {
-    for (const file of ['tokens.css', 'base.css', 'map.css', 'oqim.css', 'ai.css']) {
+    for (const file of ['tokens.css', 'base.css', 'components.css', 'map.css', 'stat.css']) {
       const response = await request.get(`/assets/css/${file}`);
+      expect(response.ok(), `${file} topilmadi`).toBe(true);
       const text = await response.text();
       const open = (text.match(/\(/g) ?? []).length;
       const close = (text.match(/\)/g) ?? []).length;

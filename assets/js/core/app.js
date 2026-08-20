@@ -1,20 +1,12 @@
 /**
- * Anonim statistika — mijoz tomoni.
+ * Ilova ishga tushishi: service worker va anonim statistika.
  *
- * Oydin'ning asosiy va'dasi anonimlik, shuning uchun bu modul ataylab
- * juda kam narsa qiladi. Serverga yuboriladigan yagona narsa — yopiq
- * ro'yxatdagi hodisa NOMI. Matn, ID, sessiya, referrer — hech biri
- * yuborilmaydi va bu yerda ular hatto o'qilmaydi ham.
+ * Ikkalasi ham "sahifa ochilganda bir marta bajariladi va foydalanuvchi
+ * ularni sezmaydi" turkumiga kiradi, shuning uchun bitta faylda.
  *
- * "Nechta odam kirdi" sanog'i shu yerda, qurilmaning o'zida hisoblanadi:
- * brauzer oxirgi marta qaysi kuni yuborganini biladi va kun almashsa
- * serverga bitta `tashrif` so'zini yuboradi. Ya'ni server "unique
- * visitor" ni aniqlash uchun kerak bo'ladigan hech qanday ma'lumotga
- * (IP, cookie, fingerprint) muhtoj emas.
- *
- * Foydalanuvchi butunlay o'chirib qo'yishi mumkin:
- *   localStorage.setItem('oydin-stat', 'off')
- * Brauzerning "Do Not Track" sozlamasi ham hurmat qilinadi.
+ * Statistika haqidagi asosiy va'da: serverga faqat yopiq ro'yxatdagi
+ * hodisa NOMI ketadi. Matn, ID, sessiya, referrer — hech biri
+ * yuborilmaydi va bu yerda o'qilmaydi ham.
  */
 
 /**
@@ -185,4 +177,27 @@ export function _resetForTests() {
   if (timer) clearTimeout(timer);
   timer = null;
   queue = new Set();
+}
+
+/* --------------------------- service worker ------------------------------ */
+
+/**
+ * Service worker'ni ro'yxatdan o'tkazish.
+ *
+ * Buning yagona maqsadi — tezlik va oflayn ishlash: qobiq keshdan
+ * ochilgani uchun ilova tarmoqni kutmaydi. Fikr kelganda kutish esa
+ * fikrni yo'qotish demak.
+ */
+export function registerServiceWorker() {
+  // Bosh ekranga o'rnatilgani — Oydin uchun eng muhim signal: odam
+  // saytni bir marta emas, doim ishlatmoqchi degani.
+  globalThis.addEventListener('appinstalled', () => track('ornatildi'));
+
+  if (!('serviceWorker' in navigator)) return;
+  // Ro'yxatdan o'tkazish sahifa yuklanishini sekinlashtirmasin.
+  globalThis.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(error => {
+      console.warn('Service worker ro‘yxatdan o‘tmadi:', error);
+    });
+  });
 }

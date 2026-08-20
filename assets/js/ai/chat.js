@@ -7,7 +7,7 @@
 
 import { $, EVENTS, el, on } from '../core/index.js';
 import { getToken, sync } from '../sync/client.js';
-import { track } from '../core/stat.js';
+import { track } from '../core/app.js';
 
 const STORAGE_KEY = 'oydin-ai-chat-v1';
 const MAX_MESSAGES = 16;

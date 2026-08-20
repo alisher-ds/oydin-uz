@@ -13,7 +13,7 @@
 
 import { $, el, isTypingTarget, on } from '../core/index.js';
 import { MAX_LENGTH, makeNote, readNotes, writeNotes } from '../core/notes.js';
-import { track } from '../core/stat.js';
+import { track } from '../core/app.js';
 
 export function createTezPanel({ onPlace }) {
   const trigger = $('#railTez');

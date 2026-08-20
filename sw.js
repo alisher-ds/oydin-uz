@@ -32,14 +32,11 @@ const PRECACHE = [
   '/assets/js/boot-map.js',
   '/assets/js/core/index.js',
   '/assets/js/core/dom.js',
-  '/assets/js/core/events.js',
   '/assets/js/core/storage.js',
   '/assets/js/core/notes.js',
   '/assets/js/core/theme.js',
-  '/assets/js/core/pwa.js',
-  '/assets/js/core/stat.js',
-  '/assets/js/core/recall.js',
-  '/assets/js/core/backup-notice.js',
+  '/assets/js/core/app.js',
+  '/assets/js/core/nudges.js',
   '/favicon.svg',
   '/manifest.webmanifest'
 ];
