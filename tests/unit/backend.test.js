@@ -1,7 +1,74 @@
+/**
+ * Backend yordamchilari — `functions/_lib/*`.
+ *
+ * Uch qatlam, bitta fayl: vault (kim), guard (qancha) va sxema (qayerga).
+ * Uchalasi ham API endpointlaridan mustaqil va sof — brauzersiz,
+ * tarmoqsiz va bazasiz test qilinadi.
+ */
+
 import assert from 'node:assert/strict';
+import { DatabaseSync } from 'node:sqlite';
 import { describe, it } from 'node:test';
 
+import { isValidToken, normalizeTimestamp, randomToken } from '../../functions/_lib/vault.js';
 import { checkLimit, clientIp, ipBucket, json } from '../../functions/_lib/guard.js';
+import { SCHEMA_STATEMENTS } from '../../functions/_lib/schema.js';
+
+/* ------------------------------- vault ----------------------------------- */
+
+describe('vault tokeni', () => {
+  it('64 belgili hex token yaratadi', () => {
+    const token = randomToken();
+    assert.equal(token.length, 64);
+    assert.match(token, /^[a-f0-9]{64}$/);
+  });
+
+  it('ketma-ket tokenlar takrorlanmaydi', () => {
+    const tokens = new Set(Array.from({ length: 200 }, () => randomToken()));
+    assert.equal(tokens.size, 200);
+  });
+
+  it('formatni tekshiradi', () => {
+    assert.ok(isValidToken('a'.repeat(64)));
+    assert.equal(isValidToken('A'.repeat(64)), false, 'katta harf rad etilishi kerak');
+    assert.equal(isValidToken('a'.repeat(63)), false);
+    assert.equal(isValidToken(''), false);
+    assert.equal(isValidToken(null), false);
+    assert.equal(isValidToken("' OR 1=1 --"), false);
+  });
+});
+
+describe('normalizeTimestamp', () => {
+  it('to‘g‘ri ISO sanani saqlaydi', () => {
+    const iso = '2024-05-01T10:00:00.000Z';
+    assert.equal(normalizeTimestamp(iso), iso);
+  });
+
+  it('KELAJAKDAGI sanani server vaqtiga qisqartiradi', () => {
+    // Mijoz "9999" yuborib abadiy g‘olib bo‘lishga urinishi mumkin edi.
+    const result = normalizeTimestamp('9999-01-01T00:00:00.000Z');
+    assert.ok(Date.parse(result) <= Date.now() + 1000);
+  });
+
+  it('kichik soat farqiga (skew) ruxsat beradi', () => {
+    const soon = new Date(Date.now() + 60_000).toISOString();
+    assert.equal(normalizeTimestamp(soon), soon);
+  });
+
+  it('noto‘g‘ri qiymatni hozirgi vaqt bilan almashtiradi', () => {
+    for (const bad of ['salom', '', null, undefined, {}, [], NaN]) {
+      const result = normalizeTimestamp(bad);
+      assert.ok(Number.isFinite(Date.parse(result)), `noto‘g‘ri natija: ${bad}`);
+    }
+  });
+
+  it('1970 dan oldingi sanani rad etadi', () => {
+    const result = normalizeTimestamp('1900-01-01T00:00:00.000Z');
+    assert.ok(Date.parse(result) > 0);
+  });
+});
+
+/* ------------------------- cheklovlar (guard) ---------------------------- */
 
 /** Minimal D1 taqlidi: `rate_limits` jadvalining xotiradagi nusxasi. */
 function fakeD1() {
@@ -208,5 +275,79 @@ describe('ipBucket() — IP ochiq saqlanmasligi', () => {
       ipBucket(makeRequest('203.0.113.9'), { IP_SALT: 'ikkinchi' }, 'sync')
     ]);
     assert.notEqual(a, b);
+  });
+});
+
+/* -------------------------------- sxema ---------------------------------- */
+
+const TABLES = ['vaults', 'spaces', 'space_deletions', 'rate_limits', 'stats'];
+
+/** Sxemani (jadval + indeks nomlari va ustunlari) o'qib olamiz. */
+function describeSchema(db) {
+  const objects = db
+    .prepare(
+      `SELECT type, name FROM sqlite_master
+       WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name`
+    )
+    .all();
+
+  const out = {};
+  for (const { type, name } of objects) {
+    if (type === 'table') {
+      out[`table:${name}`] = db
+        .prepare(`PRAGMA table_info(${name})`)
+        .all()
+        .map(c => `${c.name}:${c.type}:${c.notnull}:${c.pk}`)
+        .sort();
+    } else if (type === 'index') {
+      out[`index:${name}`] = true;
+    }
+  }
+  return out;
+}
+
+const build = () => {
+  const db = new DatabaseSync(':memory:');
+  for (const sql of SCHEMA_STATEMENTS) db.exec(sql);
+  return db;
+};
+
+describe('sxema', () => {
+  it('barcha jadvallarni yaratadi', () => {
+    const db = build();
+    const schema = describeSchema(db);
+    for (const table of TABLES) {
+      assert.ok(schema[`table:${table}`], `${table} jadvali yaratilmadi`);
+    }
+    db.close();
+  });
+
+  it('kerakli indekslarni yaratadi', () => {
+    const db = build();
+    const schema = describeSchema(db);
+    for (const index of [
+      'idx_spaces_vault_updated',
+      'idx_space_deletions_vault',
+      'idx_rate_limits_window'
+    ]) {
+      assert.ok(schema[`index:${index}`], `${index} indeksi yaratilmadi`);
+    }
+    db.close();
+  });
+
+  it('ikki marta ishga tushirish xavfsiz (idempotent)', () => {
+    const db = build();
+    db.exec("INSERT INTO vaults VALUES ('v1','h1','2026-01-01','2026-01-01')");
+    for (const sql of SCHEMA_STATEMENTS) db.exec(sql);
+    const rows = db.prepare('SELECT COUNT(*) AS n FROM vaults').get();
+    assert.equal(rows.n, 1, 'mavjud ma\u2018lumot yo\u2018qoldi');
+    db.close();
+  });
+
+  it('statistika jadvalida faqat sanoq bor \u2014 shaxsiy ustun yo\u2018q', () => {
+    const db = build();
+    const ustunlar = describeSchema(db)['table:stats'].map(c => c.split(':')[0]);
+    assert.deepEqual(ustunlar.sort(), ['day', 'event', 'hits']);
+    db.close();
   });
 });

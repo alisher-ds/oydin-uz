@@ -818,3 +818,140 @@ dialog::backdrop {
     flex: 1;
   }
 }
+
+/* ==========================================================================
+   Oydin — suhbat oynasi
+   ==========================================================================
+   Barcha ranglar mavzu tokenlaridan (`tokens.css`) olinadi. Ilgari bu fayl
+   butunlay qattiq yozilgan yorug' ranglardan iborat edi va `.night` uchun
+   birorta qoida yo'q edi — natijada tungi rejimda qorong'u sahifa ustida
+   oq suhbat oynasi chiqardi.
+   ========================================================================== */
+
+#oydinAiDialog {
+  width: min(720px, calc(100vw - 28px));
+  max-height: min(780px, calc(100dvh - 28px));
+  padding: 0;
+  border: 0;
+  border-radius: 24px;
+  background: transparent;
+  box-shadow: 0 24px 80px color-mix(in srgb, var(--ink) 18%, transparent);
+}
+#oydinAiDialog::backdrop {
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
+  backdrop-filter: blur(5px);
+}
+.ai-dialog {
+  position: relative;
+  padding: 30px;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+}
+.ai-dialog h2 {
+  margin: 4px 0 8px;
+  font-size: clamp(26px, 4vw, 38px);
+  letter-spacing: -0.03em;
+}
+.ai-dialog .dialog-hint {
+  max-width: 580px;
+  margin: 0 0 22px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.ai-dialog .dialog-close {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+}
+.ai-messages {
+  display: grid;
+  gap: 12px;
+  max-height: 420px;
+  overflow: auto;
+  padding: 4px 2px 14px;
+}
+.ai-message {
+  max-width: 84%;
+  padding: 13px 16px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+.ai-message.is-user {
+  margin-left: auto;
+  background: var(--surface);
+}
+.ai-message span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.ai-message p {
+  margin: 0;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.ai-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: end;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  padding-top: 16px;
+}
+.ai-form textarea {
+  min-height: 58px;
+  max-height: 150px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 13px 14px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  font: inherit;
+  color: inherit;
+  outline: none;
+}
+.ai-form textarea:focus {
+  border-color: var(--accent);
+}
+.ai-status {
+  min-height: 18px;
+  margin: 8px 2px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  #oydinAiDialog {
+    width: calc(100vw - 14px);
+    max-height: calc(100dvh - 14px);
+  }
+  .ai-dialog {
+    padding: 22px 16px;
+  }
+  .ai-form {
+    grid-template-columns: 1fr;
+  }
+  .ai-form .primary-button {
+    width: 100%;
+  }
+  .ai-messages {
+    max-height: 46dvh;
+  }
+  .ai-message {
+    max-width: 92%;
+  }
+}
+
+.ai-status[data-tone='error'] {
+  color: #9f4c45;
+  font-weight: 700;
+}
+.ai-status[data-tone='pending'] {
+  color: var(--muted);
+}

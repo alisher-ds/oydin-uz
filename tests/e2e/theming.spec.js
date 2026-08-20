@@ -4,7 +4,7 @@
  * Bularning har biri jonli saytda ko'rilgan aniq nuqsonga bog'langan:
  *  - sinxronizatsiya belgisi va vault oynasi bosh sahifada uslubsiz chiqardi,
  *    chunki ularning CSS'i faqat `map.css` da edi;
- *  - suhbat oynasi tungi rejimda oq bo'lib qolardi (`ai.css` da qattiq
+ *  - suhbat oynasi tungi rejimda oq bo'lib qolardi (`ai.css` da qattiq (u endi `components.css` ichida)
  *    yozilgan yorug' ranglar, `.night` qoidalari yo'q edi);
  *  - vault oynasidagi tugmalar o'ng chetdan qirqilardi (ichki panel o'z
  *    dialogidan keng edi).

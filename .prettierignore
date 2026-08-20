@@ -1,8 +1,0 @@
-node_modules/
-.wrangler/
-test-results/
-playwright-report/
-package-lock.json
-
-wrangler.toml
-_headers

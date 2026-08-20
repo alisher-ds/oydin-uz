@@ -6,7 +6,6 @@ pages_build_output_dir = "."
 binding = "OYDIN_DB"
 database_name = "oydin-db"
 database_id = "1730a3e3-2c06-45e8-b8c3-d42aa5877f39"
-migrations_dir = "migrations"
 
 # Rate limiting.
 #

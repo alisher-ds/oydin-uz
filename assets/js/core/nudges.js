@@ -1,20 +1,21 @@
 /**
- * Eski fikrni qaytarish.
+ * Turtkilar — foydalanuvchiga o'zi so'ramagan narsani ko'rsatish qoidalari.
  *
- * Yozilgan fikr vaqt o'tishi bilan o'lik bo'lib qoladi: hech kim eski
- * makonni ochib qayta o'qimaydi. Bu modul bittasini tanlab, yuzaga
- * chiqaradi — "bir vaqtlar siz shuni yozgan edingiz".
+ * Ikkita turtki bor va ikkalasining ham eng muhim vazifasi BEZOVTA
+ * QILMASLIK:
  *
- * Tanlash mantig'i ataylab UI'dan ajratilgan va SOF: kirish ma'lumoti
- * va vaqt berilsa, natija har doim bir xil. Shu sababli uni to'liq
- * test qilish mumkin.
+ *  1. Eski fikrni qaytarish — unutilgan yozuvni yuzaga chiqarish;
+ *  2. Zaxira eslatmasi — ma'lumot faqat shu qurilmada ekanini aytish.
  *
- * Qoidalar bezovta qilmaslikka qaratilgan:
- *  - fikr yetarlicha eski bo'lishi kerak (yangi yozilgani esda turadi);
- *  - kuniga bir martadan ko'p ko'rsatilmaydi;
- *  - bir marta ko'rsatilgani ancha vaqt qaytarilmaydi;
- *  - mos narsa bo'lmasa — HECH NARSA ko'rsatilmaydi, bo'sh holat ham yo'q.
+ * Ikkalasining ham qaror mantig'i SOF: kirish ma'lumoti va vaqt berilsa,
+ * natija har doim bir xil. Shuning uchun ular UI'siz to'liq test
+ * qilinadi va aynan shu sabab bitta faylda — bu fayl "qachon gapiramiz"
+ * degan yagona savolga javob beradi.
  */
+
+import { readJson, writeJson } from './storage.js';
+
+/* ------------------------ eski fikrni qaytarish -------------------------- */
 
 export const RECALL_KEY = 'oydin-recall-v1';
 
@@ -38,7 +39,8 @@ const time = value => {
  * @param {object} input.maps   `oydin-maps` ko'rinishidagi obyekt
  * @param {object} input.state  {lastShownAt, seen: {id: iso}}
  * @param {number} input.now    Hozirgi vaqt (ms)
- * @returns {null | {id: string, text: string, createdAt: string, source: 'note'|'card', mapId?: string, ageDays: number}}
+ * @returns {null | {id: string, text: string, createdAt: string,
+ *   source: 'note'|'card', mapId?: string, ageDays: number}}
  */
 export function pickRecall({ notes = [], maps = {}, state = {}, now = Date.now() }) {
   const lastShown = time(state.lastShownAt);
@@ -121,4 +123,63 @@ export function humanAge(days) {
   if (days >= 30) return 'bir oy oldin';
   if (days >= 14) return `${Math.floor(days / 7)} hafta oldin`;
   return `${days} kun oldin`;
+}
+
+/* -------------------------- zaxira eslatmasi ----------------------------- */
+
+export const BACKUP_KEY = 'oydin-backup-v1';
+
+/** Ma'lumot shuncha kun qurilmadan chiqmasa — bir marta eslatamiz. */
+export const QUIET_DAYS = 7;
+
+/**
+ * Eslatma ko'rsatilsinmi.
+ *
+ * @param {object} input
+ * @param {string} [input.firstSeenAt] qurilma birinchi ko'rilgan vaqt
+ * @param {string} [input.lastBackupAt] oxirgi sinxronizatsiya yoki eksport
+ * @param {boolean} [input.dismissed] foydalanuvchi yopganmi
+ * @param {boolean} input.hasData saqlashga arziydigan narsa bormi
+ * @param {number} [input.now]
+ */
+export function shouldRemind({
+  firstSeenAt,
+  lastBackupAt,
+  dismissed = false,
+  hasData = false,
+  now = Date.now()
+} = {}) {
+  if (dismissed || !hasData) return false;
+
+  // Hisob boshlanadigan nuqta: oxirgi zaxira, u bo'lmasa — birinchi tashrif.
+  const since = time(lastBackupAt) ?? time(firstSeenAt);
+  if (since === null) return false;
+
+  return now - since >= QUIET_DAYS * DAY;
+}
+
+/** Saqlangan holat (mavjud bo'lmasa — bo'sh obyekt). */
+export const readBackupState = () => readJson(BACKUP_KEY, {}) ?? {};
+
+/** Qurilma birinchi marta ko'rilganini qayd etadi (faqat bir marta). */
+export function noteFirstSeen(now = Date.now()) {
+  const state = readBackupState();
+  if (state.firstSeenAt) return state;
+  const next = { ...state, firstSeenAt: new Date(now).toISOString() };
+  writeJson(BACKUP_KEY, next, { silent: true });
+  return next;
+}
+
+/** Ma'lumot qurilmadan chiqdi — sinxronlandi yoki eksport qilindi. */
+export function noteBackup(now = Date.now()) {
+  const next = { ...readBackupState(), lastBackupAt: new Date(now).toISOString() };
+  writeJson(BACKUP_KEY, next, { silent: true });
+  return next;
+}
+
+/** Foydalanuvchi yopdi — boshqa hech qachon ko'rsatilmaydi. */
+export function dismissBackupNotice() {
+  const next = { ...readBackupState(), dismissed: true };
+  writeJson(BACKUP_KEY, next, { silent: true });
+  return next;
 }

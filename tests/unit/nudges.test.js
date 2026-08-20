@@ -1,17 +1,29 @@
+/**
+ * Turtkilar — `core/nudges.js` dagi qaror qoidalari.
+ *
+ * Ikkala turtkining ham eng muhim vazifasi bir xil: BEZOVTA QILMASLIK.
+ * Shuning uchun testlar "qachon ko'rsatiladi" dan ko'ra "qachon
+ * ko'rsatilMAYDI" ga ko'proq e'tibor beradi.
+ */
+
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
   COOLDOWN_DAYS,
   MIN_AGE_DAYS,
+  QUIET_DAYS,
   humanAge,
   markShown,
-  pickRecall
-} from '../../assets/js/core/recall.js';
+  pickRecall,
+  shouldRemind
+} from '../../assets/js/core/nudges.js';
 
 const DAY = 86_400_000;
 const NOW = Date.parse('2026-08-19T12:00:00.000Z');
 const daysAgo = n => new Date(NOW - n * DAY).toISOString();
+
+/* ---------------------- eski fikrni qaytarish ---------------------------- */
 
 const note = (id, days, text = `fikr ${id}`) => ({ id, text, createdAt: daysAgo(days) });
 
@@ -131,5 +143,45 @@ describe('humanAge()', () => {
     assert.equal(humanAge(90), '3 oy oldin');
     assert.equal(humanAge(400), 'bir yil oldin');
     assert.equal(humanAge(800), '2 yil oldin');
+  });
+});
+
+/* ------------------------- zaxira eslatmasi ------------------------------ */
+
+const ask = extra => shouldRemind({ hasData: true, now: NOW, ...extra });
+
+describe('shouldRemind()', () => {
+  it('ma’lumoti yo‘q odamga hech qachon aytmaydi', () => {
+    assert.equal(ask({ hasData: false, firstSeenAt: daysAgo(365) }), false);
+  });
+
+  it('yaqinda kelgan odamni bezovta qilmaydi', () => {
+    assert.equal(ask({ firstSeenAt: daysAgo(QUIET_DAYS - 1) }), false);
+  });
+
+  it('bir hafta jim turgan bo‘lsa — aytadi', () => {
+    assert.equal(ask({ firstSeenAt: daysAgo(QUIET_DAYS + 1) }), true);
+  });
+
+  it('yaqinda sinxronlagan yoki eksport qilganga aytmaydi', () => {
+    assert.equal(ask({ firstSeenAt: daysAgo(365), lastBackupAt: daysAgo(2) }), false);
+  });
+
+  it('oxirgi zaxiradan beri bir hafta o‘tsa — yana aytadi', () => {
+    assert.equal(ask({ firstSeenAt: daysAgo(365), lastBackupAt: daysAgo(QUIET_DAYS + 1) }), true);
+  });
+
+  it('BIR MARTA yopilgach hech qachon qaytmaydi', () => {
+    assert.equal(ask({ firstSeenAt: daysAgo(365), dismissed: true }), false);
+    assert.equal(ask({ firstSeenAt: daysAgo(9999), dismissed: true }), false);
+  });
+
+  it('sana noma’lum bo‘lsa jim turadi — taxmin qilib bezovta qilmaydi', () => {
+    assert.equal(ask({}), false);
+    assert.equal(ask({ firstSeenAt: 'yaroqsiz' }), false);
+  });
+
+  it('argumentsiz chaqirilsa yiqilmaydi', () => {
+    assert.equal(shouldRemind(), false);
   });
 });

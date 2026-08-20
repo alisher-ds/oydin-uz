@@ -27,7 +27,7 @@
  */
 
 import { $, el, on, readJson, writeJson } from '../core/index.js';
-import { track } from '../core/stat.js';
+import { track } from '../core/app.js';
 
 export const TOUR_KEY = 'oydin-tour-v1';
 

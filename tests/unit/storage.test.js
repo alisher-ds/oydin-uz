@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 
-import { installBrowserGlobals } from './helpers/browser-stub.js';
+import { installBrowserGlobals } from './browser-stub.js';
 
 let harness;
 let storage;
