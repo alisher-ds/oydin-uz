@@ -241,3 +241,80 @@ test.describe('Zaxira eslatmasi', () => {
     await expect(page.locator('#backupNotice')).toBeHidden();
   });
 });
+
+/**
+ * Vault faqat SO'RALGANDA yaratiladi.
+ *
+ * Ilgari `startSync()` sahifa ochilishi bilan shartsiz so'rov yuborardi
+ * va server tokensiz so'rovga javoban yangi vault yaratardi. Ya'ni
+ * saytga kirgan har bir odam — hech narsa bosmasa ham — bazada doimiy
+ * qator qoldirardi. Bu "sinxronizatsiya ixtiyoriy" degan va'daga zid.
+ *
+ * Tekshiruv tarmoq darajasida: sahifa ASLIDA nima yuborayotgani
+ * o'qiladi, kodning niyati emas.
+ */
+test.describe('Sinxronizatsiya ixtiyoriy', () => {
+  const TOKEN = 'a'.repeat(64);
+
+  /** `/api/sync` ga ketgan so'rovlarni yig'adi. */
+  const captureSync = page => {
+    const seen = [];
+    page.on('request', request => {
+      if (request.url().includes('/api/sync')) seen.push(request.method());
+    });
+    return seen;
+  };
+
+  test('sahifa ochilishida serverga HECH NARSA yuborilmaydi', async ({ page }) => {
+    await asReturning(page);
+    const seen = captureSync(page);
+
+    await page.goto('/map.html');
+    await page.waitForTimeout(1800); // `schedule(800)` + zaxira
+
+    expect(seen, 'tokensiz so‘rov ketdi — vault yaratilardi').toEqual([]);
+  });
+
+  test('fikr yozilganda ham yuborilmaydi', async ({ page }) => {
+    await asReturning(page);
+    const seen = captureSync(page);
+
+    await page.goto('/map.html');
+    await page.locator('#addFirst').click();
+    await page.locator('#thoughtText').fill('Lokal fikr');
+    await page.locator('#cardForm button[type="submit"]').click();
+    await page.waitForTimeout(2200); // debounce 1500ms dan uzoq
+
+    expect(seen).toEqual([]);
+  });
+
+  test('kaliti BOR qurilma avvalgidek sinxronlanadi', async ({ page }) => {
+    await asReturning(page);
+    await page.addInitScript(token => {
+      localStorage.setItem('oydin-vault-token-v1', token);
+    }, TOKEN);
+    const seen = captureSync(page);
+
+    await page.goto('/map.html');
+    await page.waitForTimeout(1800);
+
+    expect(seen.length, 'kaliti bor qurilma sinxronlanmadi').toBeGreaterThan(0);
+  });
+
+  test('kalit oynasida "Yoqish" tugmasi bor va u so‘rov yuboradi', async ({ page }) => {
+    await asReturning(page);
+    const seen = captureSync(page);
+
+    await page.goto('/map.html');
+    await page.waitForTimeout(900);
+    await page.locator('.sync-status').click();
+
+    const enable = page.locator('#vaultDialog [data-enable]');
+    await expect(enable).toBeVisible();
+    expect(seen, 'oyna ochilishining o‘zi so‘rov yubormasligi kerak').toEqual([]);
+
+    await enable.click();
+    await page.waitForTimeout(900);
+    expect(seen, 'yoqilganda vault yaratilishi kerak').toContain('POST');
+  });
+});

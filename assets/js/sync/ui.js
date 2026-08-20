@@ -8,7 +8,7 @@
  */
 
 import { $, EVENTS, el, escapeHtml } from '../core/index.js';
-import { forgetToken, getToken, lastSyncedAt, sync, useToken } from './client.js';
+import { enableSync, forgetToken, getToken, lastSyncedAt, sync, useToken } from './client.js';
 
 const LABELS = {
   idle: { text: 'lokal', title: 'O‘zgarishlar shu qurilmada saqlanadi.' },
@@ -56,16 +56,22 @@ function openVaultDialog() {
       <p class="kicker">QURILMALARARO KALIT</p>
       <h2>Makonlaringizni boshqa qurilmada oching</h2>
       <p class="dialog-hint">
-        Bu kalit — sizning yagona parolingiz. Uni boshqa qurilmaga kiriting va
-        makonlaringiz o‘sha yerda ham paydo bo‘ladi. Kalitni yo‘qotsangiz,
-        serverdagi nusxaga kirish imkoni qolmaydi.
+        ${
+          token
+            ? 'Bu kalit — sizning yagona parolingiz. Uni boshqa qurilmaga kiriting va makonlaringiz o‘sha yerda ham paydo bo‘ladi. Kalitni yo‘qotsangiz, serverdagi nusxaga kirish imkoni qolmaydi.'
+            : 'Sinxronizatsiya <b>o‘chiq</b>: makonlaringiz faqat shu qurilmada va serverga hech narsa yuborilmaydi. Yoqsangiz kalit yaratiladi — u sizning yagona parolingiz bo‘ladi.'
+        }
       </p>
 
       <label class="vault-field">Sizning kalitingiz
         <span class="vault-token-row">
           <input id="vaultToken" type="text" readonly value="${escapeHtml(token || '')}"
-                 placeholder="hali yaratilmagan — birinchi sinxronizatsiyadan keyin paydo bo‘ladi">
-          <button type="button" class="soft-button" data-copy ${token ? '' : 'disabled'}>Nusxalash</button>
+                 placeholder="sinxronizatsiya hali yoqilmagan">
+          ${
+            token
+              ? '<button type="button" class="soft-button" data-copy>Nusxalash</button>'
+              : '<button type="button" class="primary-button compact" data-enable>Yoqish</button>'
+          }
         </span>
       </label>
 
@@ -105,6 +111,28 @@ function openVaultDialog() {
       input.select();
       say('Nusxalab bo‘lmadi — kalitni qo‘lda belgilab oling.', 'error');
     }
+  });
+
+  /*
+   * Vault AYNAN shu yerda yaratiladi. Ilgari u sahifa ochilishi bilan
+   * o'z-o'zidan yaratilardi — ya'ni hech qachon sinxronizatsiyani
+   * so'ramagan odam ham bazada qator qoldirardi.
+   */
+  dialog.querySelector('[data-enable]')?.addEventListener('click', async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    say('Yoqilmoqda…');
+
+    await enableSync();
+
+    if (getToken()) {
+      dialog.close();
+      dialog.remove();
+      openVaultDialog(); // yangi kalit bilan qayta ochiladi
+      return;
+    }
+    button.disabled = false;
+    say('Yoqib bo‘lmadi — internetni tekshirib, qayta urinib ko‘ring.', 'error');
   });
 
   dialog.querySelector('[data-connect]').addEventListener('click', () => {

@@ -50,8 +50,9 @@ async function request(messages) {
   }
 
   if (response.status === 401) {
-    // Vault hali yaratilmagan bo'lishi mumkin — bir marta yaratib ko'ramiz.
-    await sync();
+    // Vault hali yaratilmagan bo'lishi mumkin — endi u faqat shu yerda,
+    // ataylab yaratiladi (sahifa ochilishida emas).
+    await sync({ create: true });
     throw new Error('Ulanish tayyorlanmoqda — bir soniyadan keyin qayta urinib ko‘ring.');
   }
   if (response.status === 429) {

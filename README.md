@@ -156,14 +156,33 @@ _headers      CSP va boshqa himoya sarlavhalari
 - Maʼlumot bir haftadan beri qurilmadan chiqmagan boʻlsa, **bir marta**
   zaxira olish taklif qilinadi. Yopilgach boshqa qaytmaydi.
 - IndexedDB zaxira nusxasi localStorage tozalanib ketsa maʼlumotni tiklaydi.
-- Sinxronizatsiya **ixtiyoriy**. U yoqilganda 64 belgili vault kaliti
-  yaratiladi — bu sizning yagona parolingiz. Uni yoʻqotsangiz, serverdagi
-  nusxaga kirish imkoni qolmaydi. Kalitni yuqoridagi sinxronizatsiya
-  koʻrsatkichini bosib koʻrasiz.
+- Sinxronizatsiya **ixtiyoriy va oʻchiq**. Sahifani ochishning oʻzi
+  serverga hech narsa yubormaydi va hisob yaratmaydi. Kalit faqat siz
+  soʻraganda paydo boʻladi: sinxronizatsiya koʻrsatkichini bosib
+  **Yoqish** tugmasini tanlaysiz (yoki AI suhbatiga birinchi savolni
+  yuborasiz — u ulanishni talab qiladi).
+- Kalit — 64 belgili, sizning yagona parolingiz. Uni yoʻqotsangiz,
+  serverdagi nusxaga kirish imkoni qolmaydi.
 - Server hech qanday shaxsiy maʼlumot (email, ism, parol) soʻramaydi.
 - Saytda **tashqi** kuzatuv (Google Analytics, reklama, cookie) yoʻq.
 - Rate limiting IP manzilni **ochiq saqlamaydi** — bazada faqat kunlik
   tuz bilan hisoblangan SHA-256 izi turadi.
+
+### AI suhbat chegaralari
+
+Gemini bepul kvotasi cheklangan, vault esa anonim va bepul — ya'ni
+vault-boshiga chegara yolgʻiz oʻzi kvotani himoya qilmaydi. Shu sababli
+ikki qavat bor:
+
+| Chegara                 | Qiymati | Nima uchun                                   |
+| ----------------------- | ------- | -------------------------------------------- |
+| Bitta vault, daqiqasiga | 10      | tez-tez bosishdan                            |
+| Bitta vault, kuniga     | 40      | bitta odam kvotani yeb qoʻymasin             |
+| **Hammasi, kuniga**     | **600** | vaultlar soni qancha boʻlishidan qatʼi nazar |
+
+Umumiy chegara hisoblagichni **oshirmasdan** tekshiriladi: kvota tugagan
+paytda kelgan soʻrov foydalanuvchining shaxsiy kunlik hisobini yeb
+qoʻymaydi.
 
 ### Anonim statistika
 
