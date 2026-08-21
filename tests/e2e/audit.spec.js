@@ -25,6 +25,18 @@ test.beforeEach(async ({ page }) => {
   await skipTour(page);
 });
 
+/*
+ * Bu test ataylab uzun: yigirmadan ortiq tekshiruvni bitta brauzer
+ * sessiyasida ketma-ket bajaradi (holat qadamlar orasida saqlanishi
+ * kerak, shuning uchun bo'linmaydi).
+ *
+ * Yolg'iz yuritilganda ~29 soniya oladi — Playwright'ning standart 30
+ * soniyasiga juda yaqin. To'liq to'plam parallel ketganda esa undan
+ * oshib, testni "tushgan" qilib ko'rsatardi. Sabab mahsulotda emas,
+ * chegarada edi.
+ */
+test.setTimeout(120_000);
+
 test('to‘liq funksional tekshiruv', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));

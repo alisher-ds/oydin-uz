@@ -14,7 +14,7 @@
  * "AI provider request failed" ko'rinishida ko'rardi.
  */
 
-import { checkLimit, guard, json } from '../_lib/guard.js';
+import { checkLimit, guard, ipBucket, json } from '../_lib/guard.js';
 import { ensureSchema } from '../_lib/schema.js';
 import { hashToken, isValidToken } from '../_lib/vault.js';
 
@@ -80,6 +80,29 @@ const PER_DAY = 40;
  */
 const GLOBAL_PER_DAY = 600;
 const GLOBAL_BUCKET = 'global:chat-day';
+
+/*
+ * ADOLATLI TAQSIMOT.
+ *
+ * Umumiy chegara kvotani himoya qiladi, lekin ADOLATNI emas: bir odam
+ * 15 ta vault yaratib 600 ni ertalabgacha tugatsa, qolgan hamma kun
+ * bo'yi AI'siz qoladi. Ya'ni himoyaning o'zi hujum vositasiga aylanadi.
+ *
+ * Ikkita qo'shimcha to'siq buni yopadi:
+ *
+ *  1. IP bo'yicha kunlik chegara. Vaultlar cheksiz yaratilsa ham,
+ *     hammasi bitta IP dan kelsa — bitta hisobda sanaladi. Bu "ko'p
+ *     vault" hiylasini butunlay bekor qiladi.
+ *
+ *  2. Umumiy kvota to'lgani sari SHAXSIY chegara qisqaradi. Qolgan
+ *     sig'im ko'proq odamga yetsin: ko'p ishlatgan avval cheklanadi,
+ *     kam ishlatgan oxirigacha o'ta oladi.
+ */
+const PER_IP_DAY = 60;
+/** Umumiy kvota shu ulushdan oshsa, shaxsiy chegara qisqaradi. */
+const BUSY_AT = 0.7;
+/** Siqilgan holatdagi shaxsiy kunlik chegara. */
+const PER_DAY_BUSY = 10;
 
 /** Gemini qabul qiladigan minimal sxema — ortiqcha maydonlarsiz. */
 const RESPONSE_SCHEMA = {
@@ -333,16 +356,33 @@ export async function onRequestPost({ request, env }) {
       });
     }
 
+    // Sig'im kamaygani sari shaxsiy ulush ham kamayadi.
+    const busy = globalDay.hits >= GLOBAL_PER_DAY * BUSY_AT;
+    const dayLimit = busy ? PER_DAY_BUSY : PER_DAY;
+
+    // IP chegarasi vaultdan MUSTAQIL: yangi vault yaratish yordam bermaydi.
+    const ipDay = await ipBucket(request, env, 'chat-day');
+    const perIp = await checkLimit(env, ipDay, PER_IP_DAY, 86_400);
+    if (!perIp.ok) {
+      return json(
+        { error: 'Bu qurilmadan bugungi AI limiti tugadi. Ertaga yana davom etamiz.' },
+        429,
+        { 'retry-after': String(perIp.retryAfter) }
+      );
+    }
+
     const [perMinute, perDay] = await Promise.all([
       checkLimit(env, `vault:${vault.id}:chat`, PER_MINUTE, 60),
-      checkLimit(env, `vault:${vault.id}:chat-day`, PER_DAY, 86_400)
+      checkLimit(env, `vault:${vault.id}:chat-day`, dayLimit, 86_400)
     ]);
     if (!perMinute.ok || !perDay.ok) {
       return json(
         {
           error: perDay.ok
             ? 'Juda ko‘p so‘rov. Bir daqiqadan keyin urinib ko‘ring.'
-            : 'Bugungi AI limiti tugadi. Ertaga yana davom etamiz.'
+            : busy
+              ? 'AI bugun band — sig‘im hamma uchun taqsimlanyapti. Ertaga to‘liq ochiladi.'
+              : 'Bugungi AI limiti tugadi. Ertaga yana davom etamiz.'
         },
         429,
         { 'retry-after': String(perMinute.ok ? perDay.retryAfter : perMinute.retryAfter) }

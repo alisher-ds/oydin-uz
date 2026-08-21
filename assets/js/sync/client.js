@@ -164,6 +164,57 @@ export function useToken(token) {
 /** Sinxronizatsiyani ataylab yoqadi — vault shu paytda yaratiladi. */
 export const enableSync = () => sync({ create: true });
 
+/**
+ * Kalitni boshqarish so'rovi (`rotate` yoki `revoke`).
+ * @returns {Promise<object|null>} javob, yoki muvaffaqiyatsiz bo'lsa `null`
+ */
+async function manageVault(action) {
+  const token = getToken();
+  if (!token) return null;
+
+  try {
+    const response = await fetch('/api/vault', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'X-Oydin-Vault': token },
+      credentials: 'same-origin',
+      body: JSON.stringify({ action })
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Kalitni yangilaydi: o'sha vaultga yangi kalit, eskisi shu zahoti
+ * ishlamay qoladi. Ma'lumot joyida qoladi.
+ *
+ * DIQQAT: boshqa qurilmalar ham uziladi — ular yangi kalitni kiritishi
+ * kerak bo'ladi. Bu xatolik emas, aynan maqsad.
+ *
+ * @returns {Promise<boolean>}
+ */
+export async function rotateToken() {
+  const data = await manageVault('rotate');
+  if (!/^[a-f0-9]{64}$/.test(String(data?.token ?? ''))) return false;
+  writeRaw(TOKEN_KEY, data.token, { silent: true });
+  return true;
+}
+
+/**
+ * Vaultni va uning SERVERDAGI barcha ma'lumotini o'chiradi.
+ * Qurilmadagi fikrlarga tegilmaydi.
+ *
+ * @returns {Promise<boolean>}
+ */
+export async function revokeVault() {
+  const data = await manageVault('revoke');
+  if (!data?.ok) return false;
+  forgetToken();
+  return true;
+}
+
 /** Ushbu qurilmani vaultdan uzadi (ma'lumot lokalda qoladi). */
 export function forgetToken() {
   writeRaw(TOKEN_KEY, '', { silent: true });
