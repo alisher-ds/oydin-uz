@@ -229,6 +229,27 @@ dialog::backdrop {
   color: #4f8a63;
 }
 
+/*
+ * Kalitni boshqarish amallari.
+ *
+ * Uchalasi ham qaytarib bo'lmaydigan, shuning uchun bir qatorda va
+ * asosiy amallardan (nusxalash, ulanish) ajratilgan holda turadi.
+ */
+.vault-manage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.vault-manage button[data-armed='yes'] {
+  border-color: var(--accent);
+  color: var(--accent-2);
+  font-weight: 800;
+}
+
 .vault-footer {
   display: flex;
   flex-wrap: wrap;
@@ -262,6 +283,9 @@ dialog::backdrop {
   .vault-footer {
     flex-direction: column;
     align-items: stretch;
+  }
+  .vault-manage {
+    flex-direction: column;
   }
   .sync-status .sync-text {
     display: none;

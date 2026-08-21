@@ -364,3 +364,79 @@ test.describe('Oflayn va o‘rnatish', () => {
     }
   });
 });
+
+/**
+ * Kalitni boshqarish.
+ *
+ * REGRESSIYA: kalit bir marta yaratilgach abadiy amal qilardi. Uni
+ * ko'rgan har kim serverdagi nusxaga cheksiz kira olardi, "uzish" esa
+ * faqat brauzerdagi nusxani o'chirardi.
+ */
+test.describe('Kalitni boshqarish', () => {
+  const TOKEN = 'b'.repeat(64);
+
+  const withToken = page =>
+    page.addInitScript(token => {
+      localStorage.setItem('oydin-vault-token-v1', token);
+    }, TOKEN);
+
+  const openVault = async page => {
+    await page.goto('/map.html', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(700);
+    await page.locator('.sync-status').click();
+    await expect(page.locator('#vaultDialog')).toBeVisible();
+  };
+
+  test('kaliti bor bo‘lsa uchta amal ko‘rinadi', async ({ page }) => {
+    await asReturning(page);
+    await withToken(page);
+    await openVault(page);
+
+    await expect(page.locator('#vaultDialog [data-rotate]')).toBeVisible();
+    await expect(page.locator('#vaultDialog [data-forget]')).toBeVisible();
+    await expect(page.locator('#vaultDialog [data-revoke]')).toBeVisible();
+  });
+
+  test('kaliti yo‘q bo‘lsa boshqaruv amallari YO‘Q', async ({ page }) => {
+    await asReturning(page);
+    await openVault(page);
+
+    await expect(page.locator('#vaultDialog [data-enable]')).toBeVisible();
+    await expect(page.locator('#vaultDialog [data-rotate]')).toHaveCount(0);
+    await expect(page.locator('#vaultDialog [data-revoke]')).toHaveCount(0);
+  });
+
+  test('yangilash IKKI bosqichli — bir bosishda hech narsa bo‘lmaydi', async ({ page }) => {
+    await asReturning(page);
+    await withToken(page);
+
+    const seen = [];
+    page.on('request', request => {
+      if (request.url().includes('/api/vault')) seen.push(request.method());
+    });
+
+    await openVault(page);
+    await page.locator('#vaultDialog [data-rotate]').click();
+    await page.waitForTimeout(500);
+
+    // Birinchi bosish faqat so'raydi.
+    await expect(page.locator('#vaultDialog [data-rotate]')).toHaveText('Tasdiqlang');
+    await expect(page.locator('#vaultMessage')).toContainText('BOSHQA QURILMALAR');
+    expect(seen, 'birinchi bosishda so‘rov ketmasligi kerak').toEqual([]);
+
+    // Ikkinchisi bajaradi.
+    await page.locator('#vaultDialog [data-rotate]').click();
+    await page.waitForTimeout(700);
+    expect(seen).toContain('POST');
+  });
+
+  test('o‘chirish ham tasdiq so‘raydi va nimani yo‘qotishini aytadi', async ({ page }) => {
+    await asReturning(page);
+    await withToken(page);
+    await openVault(page);
+
+    await page.locator('#vaultDialog [data-revoke]').click();
+    await expect(page.locator('#vaultMessage')).toContainText('qaytarib bo‘lmaydi');
+    await expect(page.locator('#vaultMessage')).toContainText('qurilmadagi fikrlar qoladi');
+  });
+});

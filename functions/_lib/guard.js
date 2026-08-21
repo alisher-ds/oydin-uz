@@ -103,6 +103,7 @@ function memoryLimit(bucket, limit, windowSeconds, count = true) {
     const active = previous && now - previous.started < windowMs;
     return {
       ok: !active || previous.count < limit,
+      hits: active ? previous.count : 0,
       retryAfter: active
         ? Math.max(1, Math.ceil((windowMs - (now - previous.started)) / 1000))
         : windowSeconds
@@ -116,11 +117,12 @@ function memoryLimit(bucket, limit, windowSeconds, count = true) {
         if (now - value.started >= windowMs) memoryBuckets.delete(key);
       }
     }
-    return { ok: true, retryAfter: windowSeconds };
+    return { ok: true, hits: 1, retryAfter: windowSeconds };
   }
   previous.count += 1;
   return {
     ok: previous.count <= limit,
+    hits: previous.count,
     retryAfter: Math.max(1, Math.ceil((windowMs - (now - previous.started)) / 1000))
   };
 }
@@ -140,7 +142,11 @@ async function databaseLimit(db, bucket, limit, windowSeconds, count) {
       .bind(bucket)
       .first();
     const hits = Number(current?.window_start) === windowStart ? Number(current.hits) : 0;
-    return { ok: hits < limit, retryAfter: Math.max(1, windowStart + windowSeconds - nowSeconds) };
+    return {
+      ok: hits < limit,
+      hits,
+      retryAfter: Math.max(1, windowStart + windowSeconds - nowSeconds)
+    };
   }
 
   const row = await db
@@ -158,6 +164,7 @@ async function databaseLimit(db, bucket, limit, windowSeconds, count) {
   const hits = Number(row?.hits ?? 1);
   return {
     ok: hits <= limit,
+    hits,
     retryAfter: Math.max(1, windowStart + windowSeconds - nowSeconds)
   };
 }
@@ -180,7 +187,9 @@ async function sweep(db, windowSeconds) {
  *   OSHIRMASDAN tekshiradi. Bu muvaffaqiyatsiz urinishlar kvotani yeb
  *   qo'yishining oldini oladi: ilgari server xatosi tufayli tushgan besh
  *   urinish foydalanuvchini bir soatga bloklab qo'yardi.
- * @returns {Promise<{ok: boolean, retryAfter: number}>}
+ * @returns {Promise<{ok: boolean, hits: number, retryAfter: number}>}
+ *   `hits` — oynadagi joriy sanoq. Bu bilan "kvota qanchalik to'lgan"
+ *   degan savolga javob berish mumkin, faqat "to'ldimi" emas.
  */
 export async function checkLimit(env, bucket, limit, windowSeconds, options = {}) {
   const count = options.count !== false;
@@ -188,7 +197,7 @@ export async function checkLimit(env, bucket, limit, windowSeconds, options = {}
   if (count && env?.OYDIN_RATE_LIMITER?.limit) {
     try {
       const result = await env.OYDIN_RATE_LIMITER.limit({ key: bucket });
-      return { ok: Boolean(result.success), retryAfter: windowSeconds };
+      return { ok: Boolean(result.success), hits: 0, retryAfter: windowSeconds };
     } catch (error) {
       console.warn('Native rate limiter ishlamadi, D1 ga o‘tamiz:', error);
     }

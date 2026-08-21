@@ -1,9 +1,8 @@
 /**
  * Backend yordamchilari — `functions/_lib/*`.
  *
- * Uch qatlam, bitta fayl: vault (kim), guard (qancha) va sxema (qayerga).
- * Uchalasi ham API endpointlaridan mustaqil va sof — brauzersiz,
- * tarmoqsiz va bazasiz test qilinadi.
+ * Vault (kim), guard (qancha), sxema (qayerga) — va kalitni boshqarish
+ * endpointi. Hammasi brauzersiz va tarmoqsiz test qilinadi.
  */
 
 import assert from 'node:assert/strict';
@@ -13,6 +12,7 @@ import { describe, it } from 'node:test';
 import { isValidToken, normalizeTimestamp, randomToken } from '../../functions/_lib/vault.js';
 import { checkLimit, clientIp, ipBucket, json } from '../../functions/_lib/guard.js';
 import { SCHEMA_STATEMENTS } from '../../functions/_lib/schema.js';
+import { onRequestPost as vaultPost } from '../../functions/api/vault.js';
 
 /* ------------------------------- vault ----------------------------------- */
 
@@ -349,5 +349,126 @@ describe('sxema', () => {
     const ustunlar = describeSchema(db)['table:stats'].map(c => c.split(':')[0]);
     assert.deepEqual(ustunlar.sort(), ['day', 'event', 'hits']);
     db.close();
+  });
+});
+
+/* ------------------------ kalitni boshqarish ----------------------------- */
+
+/**
+ * Kalit bir marta yaratilgach abadiy amal qilardi: uni ko'rgan har kim
+ * serverdagi nusxaga cheksiz kira olardi, "uzish" esa faqat brauzerdagi
+ * nusxani o'chirardi.
+ */
+describe('POST /api/vault', () => {
+  const TOKEN = 'a'.repeat(64);
+
+  /** D1 o'rnini bosuvchi: bajarilgan SQL ni yozib boradi. */
+  const fakeDb = ({ vaultFound = true } = {}) => {
+    const ran = [];
+    return {
+      ran,
+      env: {
+        OYDIN_DB: {
+          prepare(sql) {
+            return {
+              bind(...args) {
+                ran.push({ sql: sql.replace(/\s+/g, ' ').trim(), args });
+                return this;
+              },
+              async first() {
+                if (sql.includes('FROM vaults')) return vaultFound ? { id: 'vault_1' } : null;
+                return null;
+              },
+              async run() {
+                return { success: true };
+              }
+            };
+          },
+          async batch(list) {
+            return list.map(() => ({ success: true }));
+          }
+        }
+      }
+    };
+  };
+
+  const ask = (env, { action = 'rotate', token = TOKEN } = {}) =>
+    vaultPost({
+      request: new Request('https://oydin-uz.pages.dev/api/vault', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          Origin: 'https://oydin-uz.pages.dev',
+          ...(token ? { 'X-Oydin-Vault': token } : {})
+        },
+        body: JSON.stringify({ action })
+      }),
+      env
+    });
+
+  it('kalitsiz so‘rovni rad etadi', async () => {
+    const { env } = fakeDb();
+    assert.equal((await ask(env, { token: '' })).status, 401);
+  });
+
+  it('buzuq kalitni rad etadi', async () => {
+    const { env } = fakeDb();
+    assert.equal((await ask(env, { token: 'qisqa' })).status, 401);
+  });
+
+  it('mavjud bo‘lmagan kalit ham 401 — vault borligi oshkor bo‘lmasin', async () => {
+    const { env } = fakeDb({ vaultFound: false });
+    const response = await ask(env);
+    assert.equal(response.status, 401);
+    assert.ok(!(await response.json()).error.includes('topilmadi vault'));
+  });
+
+  it('noma’lum amalni bajarmaydi', async () => {
+    const { env, ran } = fakeDb();
+    assert.equal((await ask(env, { action: 'delete-everything' })).status, 400);
+
+    // `rate_limits` ga tegishi normal (bu `guard()` ning hisoblagichi).
+    // Vault ma'lumotiga esa umuman tegilmasligi kerak.
+    const tegdi = ran.filter(item => /vaults|spaces|space_deletions/.test(item.sql));
+    assert.deepEqual(tegdi, [], 'vault ma’lumotiga tegildi');
+  });
+
+  it('rotate — YANGI kalit qaytaradi va u eskisidan farq qiladi', async () => {
+    const { env } = fakeDb();
+    const data = await (await ask(env, { action: 'rotate' })).json();
+    assert.match(data.token, /^[a-f0-9]{64}$/);
+    assert.notEqual(data.token, TOKEN);
+  });
+
+  it('rotate — bazada `token_hash` YANGILANADI (eski kalit o‘ladi)', async () => {
+    const { env, ran } = fakeDb();
+    await ask(env, { action: 'rotate' });
+
+    const update = ran.find(item => item.sql.startsWith('UPDATE vaults SET token_hash'));
+    assert.ok(update, 'token_hash yangilanmadi — eski kalit ishlayveradi');
+    assert.match(update.args[0], /^[a-f0-9]{64}$/);
+  });
+
+  it('revoke — uchta jadvaldan ham o‘chiradi, yetim qator qolmaydi', async () => {
+    const { env, ran } = fakeDb();
+    const response = await ask(env, { action: 'revoke' });
+    assert.equal(response.status, 200);
+
+    const deletes = ran.filter(item => item.sql.startsWith('DELETE')).map(item => item.sql);
+    for (const table of ['spaces', 'space_deletions', 'vaults']) {
+      assert.ok(
+        deletes.some(sql => sql.includes(`FROM ${table} `)),
+        `${table} tozalanmadi`
+      );
+    }
+  });
+
+  it('revoke — faqat O‘SHA vaultning ma’lumotini o‘chiradi', async () => {
+    const { env, ran } = fakeDb();
+    await ask(env, { action: 'revoke' });
+
+    for (const item of ran.filter(entry => entry.sql.startsWith('DELETE'))) {
+      assert.deepEqual(item.args, ['vault_1'], `keng o‘chirish: ${item.sql}`);
+    }
   });
 });

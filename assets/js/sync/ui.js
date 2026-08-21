@@ -8,7 +8,16 @@
  */
 
 import { $, EVENTS, el, escapeHtml } from '../core/index.js';
-import { enableSync, forgetToken, getToken, lastSyncedAt, sync, useToken } from './client.js';
+import {
+  enableSync,
+  forgetToken,
+  getToken,
+  lastSyncedAt,
+  revokeVault,
+  rotateToken,
+  sync,
+  useToken
+} from './client.js';
 
 const LABELS = {
   idle: { text: 'lokal', title: 'O‘zgarishlar shu qurilmada saqlanadi.' },
@@ -84,9 +93,20 @@ function openVaultDialog() {
       </label>
       <p class="vault-message" id="vaultMessage" role="status"></p>
 
+      ${
+        token
+          ? `<div class="vault-manage">
+        <button type="button" class="soft-button" data-rotate>Kalitni yangilash</button>
+        <button type="button" class="soft-button" data-forget>Bu qurilmani uzish</button>
+        <button type="button" class="soft-button is-danger" data-revoke>
+          Serverdagi nusxani o‘chirish
+        </button>
+      </div>`
+          : ''
+      }
+
       <div class="vault-footer">
         <small>Oxirgi sinxronizatsiya: ${escapeHtml(formatTime(lastSyncedAt()))}</small>
-        ${token ? '<button type="button" class="soft-button is-danger" data-forget>Bu qurilmani uzish</button>' : ''}
       </div>
     </div>`;
 
@@ -146,6 +166,73 @@ function openVaultDialog() {
     } else {
       say('Kalit noto‘g‘ri: u 64 ta belgidan (0-9, a-f) iborat bo‘lishi kerak.', 'error');
     }
+  });
+
+  /**
+   * Ikki bosqichli tasdiqlash.
+   *
+   * Bu amallar qaytarib bo'lmaydigan: kalit yangilansa boshqa
+   * qurilmalar uziladi, nusxa o'chirilsa serverda hech narsa qolmaydi.
+   * Tasodifiy bosishdan himoya kerak, lekin alohida oyna ortiqcha —
+   * tugmaning o'zi savol berib turadi.
+   */
+  const confirmed = (button, question) => {
+    if (button.dataset.armed === 'yes') return true;
+    button.dataset.armed = 'yes';
+    const original = button.textContent.trim();
+    button.textContent = 'Tasdiqlang';
+    say(question, 'error');
+    setTimeout(() => {
+      if (!button.isConnected) return;
+      button.dataset.armed = 'no';
+      button.textContent = original;
+    }, 6000);
+    return false;
+  };
+
+  dialog.querySelector('[data-rotate]')?.addEventListener('click', async event => {
+    const button = event.currentTarget;
+    if (!confirmed(button, 'Yangi kalit beriladi va BOSHQA QURILMALAR uziladi. Davom etamizmi?')) {
+      return;
+    }
+    button.disabled = true;
+    say('Yangilanmoqda…');
+
+    if (await rotateToken()) {
+      dialog.close();
+      dialog.remove();
+      openVaultDialog(); // yangi kalit bilan qayta ochiladi
+      return;
+    }
+    button.disabled = false;
+    button.dataset.armed = 'no';
+    say('Yangilab bo‘lmadi — internetni tekshirib, qayta urinib ko‘ring.', 'error');
+  });
+
+  dialog.querySelector('[data-revoke]')?.addEventListener('click', async event => {
+    const button = event.currentTarget;
+    if (
+      !confirmed(
+        button,
+        'Serverdagi barcha nusxa o‘chiriladi va qaytarib bo‘lmaydi. Bu qurilmadagi fikrlar qoladi. Davom etamizmi?'
+      )
+    ) {
+      return;
+    }
+    button.disabled = true;
+    say('O‘chirilmoqda…');
+
+    if (await revokeVault()) {
+      say('Serverda hech narsa qolmadi. Fikrlaringiz shu qurilmada.');
+      setTimeout(() => {
+        dialog.close();
+        dialog.remove();
+      }, 1600);
+      return;
+    }
+    button.disabled = false;
+    button.dataset.armed = 'no';
+    say('O‘chirib bo‘lmadi — qayta urinib ko‘ring.', 'error');
   });
 
   dialog.querySelector('[data-forget]')?.addEventListener('click', () => {

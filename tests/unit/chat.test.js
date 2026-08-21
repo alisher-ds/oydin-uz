@@ -432,3 +432,103 @@ describe('umumiy kunlik chegara', () => {
     assert.ok(bumped.includes('global:chat-day'), 'umumiy hisoblagich oshmadi');
   });
 });
+
+/**
+ * Adolatli taqsimot.
+ *
+ * Umumiy chegara kvotani himoya qiladi, lekin adolatni emas: bir odam
+ * ko'p vault yaratib butun kunlik sig'imni tugatsa, qolgan hamma AI'siz
+ * qoladi. Quyidagi testlar aynan shu holatni qoplaydi.
+ */
+describe('adolatli taqsimot', () => {
+  const windowStart = seconds => {
+    const now = Math.floor(Date.now() / 1000);
+    return now - (now % seconds);
+  };
+
+  /**
+   * @param {object} input
+   * @param {number} [input.global] umumiy kunlik hisoblagich qiymati
+   * @param {number} [input.ipDay] IP kunlik hisoblagichining yangi qiymati
+   * @param {number} [input.vaultDay] vault kunlik hisoblagichining yangi qiymati
+   */
+  const envWith = ({ global = 0, ipDay = 1, vaultDay = 1 } = {}) => ({
+    GEMINI_API_KEY: 'test-key',
+    OYDIN_DB: {
+      prepare(sql) {
+        let bucket = null;
+        return {
+          bind(...args) {
+            bucket = args[0];
+            return this;
+          },
+          async first() {
+            if (sql.includes('FROM vaults')) return { id: 'vault_1' };
+            // "Peek" — faqat umumiy hisoblagich uchun ishlatiladi.
+            if (sql.startsWith('SELECT hits')) {
+              return bucket === 'global:chat-day'
+                ? { hits: global, window_start: windowStart(86_400) }
+                : null;
+            }
+            if (sql.includes('INSERT INTO rate_limits')) {
+              if (String(bucket).startsWith('ip:') && String(bucket).endsWith(':chat-day')) {
+                return { hits: ipDay };
+              }
+              if (String(bucket).endsWith(':chat-day')) return { hits: vaultDay };
+              return { hits: 1 };
+            }
+            return null;
+          },
+          async run() {
+            return { success: true };
+          }
+        };
+      },
+      async batch(list) {
+        return list.map(() => ({ results: [] }));
+      }
+    }
+  });
+
+  it('IP kunlik chegarasi VAULTDAN mustaqil — yangi vault yordam bermaydi', async () => {
+    const calls = mockFetch([]);
+    const response = await onRequestPost({
+      request: makeRequest(),
+      env: envWith({ ipDay: 61 }) // PER_IP_DAY = 60
+    });
+
+    assert.equal(response.status, 429);
+    assert.match((await response.json()).error, /qurilmadan/i);
+    assert.equal(calls.length, 0, 'Gemini‘ga so‘rov ketmasligi kerak');
+  });
+
+  it('sig‘im bo‘sh bo‘lsa shaxsiy chegara to‘liq (40)', async () => {
+    mockFetch([{ status: 200, body: okReply('Mayli.') }]);
+    const response = await onRequestPost({
+      request: makeRequest(),
+      env: envWith({ global: 0, vaultDay: 30 })
+    });
+    assert.equal(response.status, 200, '30 < 40 — o‘tishi kerak');
+  });
+
+  it('umumiy sig‘im 70% dan oshsa shaxsiy chegara QISQARADI (10)', async () => {
+    mockFetch([{ status: 200, body: okReply('Mayli.') }]);
+    const response = await onRequestPost({
+      request: makeRequest(),
+      // 600 ning 70% i = 420. O'sha 30 ta so'rov endi ko'p hisoblanadi.
+      env: envWith({ global: 450, vaultDay: 30 })
+    });
+
+    assert.equal(response.status, 429);
+    assert.match((await response.json()).error, /band/i);
+  });
+
+  it('siqilgan holatda ham kam ishlatgan odam o‘ta oladi', async () => {
+    mockFetch([{ status: 200, body: okReply('Mayli.') }]);
+    const response = await onRequestPost({
+      request: makeRequest(),
+      env: envWith({ global: 450, vaultDay: 5 }) // 5 < 10
+    });
+    assert.equal(response.status, 200, 'kam ishlatgan cheklanmasligi kerak');
+  });
+});

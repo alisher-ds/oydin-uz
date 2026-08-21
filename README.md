@@ -72,6 +72,7 @@ HTML, CSS (custom properties, `color-mix`), JavaScript, SVG.
 | `POST /api/chat`  | AI suhbat (Google Gemini) — vault tokeni talab qilinadi |
 | `GET /api/health` | Xizmat holati                                           |
 | `POST /api/stat`  | Anonim statistika — faqat hodisa nomi                   |
+| `POST /api/vault` | Kalitni yangilash yoki serverdagi nusxani oʻchirish     |
 
 **Maʼlumot** — Cloudflare D1 (SQLite). Sxema `functions/_lib/schema.js` da:
 jadvallar birinchi API soʻrovida `CREATE TABLE IF NOT EXISTS` bilan
@@ -163,6 +164,12 @@ _headers      CSP va boshqa himoya sarlavhalari
   yuborasiz — u ulanishni talab qiladi).
 - Kalit — 64 belgili, sizning yagona parolingiz. Uni yoʻqotsangiz,
   serverdagi nusxaga kirish imkoni qolmaydi.
+- Kalitni **yangilash** mumkin: oʻsha makonlarga yangi kalit beriladi,
+  eskisi shu zahoti ishlamay qoladi. Kalit boshqaga koʻrinib qolsa shu
+  kerak boʻladi.
+- Serverdagi nusxani **butunlay oʻchirish** ham mumkin: vault va uning
+  barcha maʼlumoti yoʻqoladi, qurilmadagi fikrlar esa qoladi. Ikkala
+  amal ham joriy kalitni talab qiladi va ikki bosqichda tasdiqlanadi.
 - Server hech qanday shaxsiy maʼlumot (email, ism, parol) soʻramaydi.
 - Saytda **tashqi** kuzatuv (Google Analytics, reklama, cookie) yoʻq.
 - Rate limiting IP manzilni **ochiq saqlamaydi** — bazada faqat kunlik
@@ -174,15 +181,22 @@ Gemini bepul kvotasi cheklangan, vault esa anonim va bepul — ya'ni
 vault-boshiga chegara yolgʻiz oʻzi kvotani himoya qilmaydi. Shu sababli
 ikki qavat bor:
 
-| Chegara                 | Qiymati | Nima uchun                                   |
-| ----------------------- | ------- | -------------------------------------------- |
-| Bitta vault, daqiqasiga | 10      | tez-tez bosishdan                            |
-| Bitta vault, kuniga     | 40      | bitta odam kvotani yeb qoʻymasin             |
-| **Hammasi, kuniga**     | **600** | vaultlar soni qancha boʻlishidan qatʼi nazar |
+| Chegara                        | Qiymati | Nima uchun                          |
+| ------------------------------ | ------- | ----------------------------------- |
+| Bitta vault, daqiqasiga        | 10      | tez-tez bosishdan                   |
+| Bitta vault, kuniga            | 40      | bitta odam kvotani yeb qoʻymasin    |
+| **Bitta qurilma (IP), kuniga** | **60**  | koʻp vault yaratish yordam bermasin |
+| **Hammasi, kuniga**            | **600** | provayder kvotasini himoya qiladi   |
 
 Umumiy chegara hisoblagichni **oshirmasdan** tekshiriladi: kvota tugagan
 paytda kelgan soʻrov foydalanuvchining shaxsiy kunlik hisobini yeb
 qoʻymaydi.
+
+**Adolatli taqsimot.** Umumiy sigʻim **70%** dan oshsa, shaxsiy kunlik
+chegara 40 dan **10** ga tushadi. Qolgan sigʻim koʻproq odamga yetsin:
+koʻp ishlatgan avval cheklanadi, kam ishlatgan oxirigacha oʻta oladi.
+Aks holda bitta odam butun kunlik sigʻimni ertalabgacha tugatib, qolgan
+hammani AI'dan mahrum qila olardi.
 
 ### Anonim statistika
 
