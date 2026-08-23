@@ -11,6 +11,11 @@ on:
   pull_request:
   workflow_dispatch:
 
+# CI faqat kodni o'qiydi va test qiladi. Token buzilgan taqdirda ham
+# repository mazmuniga yozish huquqi bo'lmasin.
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
