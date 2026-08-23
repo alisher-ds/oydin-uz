@@ -17,7 +17,7 @@
 // Versiya o'zgarsa `activate` eski keshlarni tozalaydi. Uslub yoki
 // modullar jiddiy o'zgarganda ko'tariladi — aks holda qaytgan
 // foydalanuvchi yangi imkoniyatlarni bir yuklanish kechikib ko'radi.
-const VERSION = 'oydin-v3';
+const VERSION = 'oydin-v4';
 
 /** Birinchi ochilishdayoq keshlanadigan minimal to'plam. */
 const PRECACHE = [
@@ -28,6 +28,7 @@ const PRECACHE = [
   '/assets/css/components.css',
   '/assets/css/map.css',
   '/assets/js/boot-map.js',
+  '/assets/js/recover.js',
   '/assets/js/core/index.js',
   '/assets/js/core/dom.js',
   '/assets/js/core/storage.js',
@@ -95,6 +96,35 @@ self.addEventListener('fetch', event => {
     event.respondWith(networkFirst(request));
     return;
   }
+
+  /*
+   * KOD (JS va CSS) ham avval tarmoqdan olinadi. Sabab jiddiy.
+   *
+   * Ilgari ular "keshdan ber, fonda yangila" yo'li bilan berilardi.
+   * Fayl nomlari o'zgarmasligi sababli (build bosqichi yo'q, hash yo'q)
+   * bitta modul eski keshdan, ikkinchisi tarmoqdan kelib qolishi mumkin
+   * edi — ya'ni IKKI XIL AVLOD aralashardi.
+   *
+   * Oqibati butun ilovani o'ldirardi:
+   *
+   *   The requested module '../core/app.js' does not provide an
+   *   export named 'setStatsEnabled'
+   *
+   * Bitta import yiqilsa modul zanjiri to'liq to'xtaydi — sahifa
+   * ochiladi, lekin birorta tugma ishlamaydi. Buni takrorlab ko'rdim:
+   * eski kesh + yangi deploy = aynan shu xato.
+   *
+   * Endi kod har doim bitta deploy'dan keladi. Kesh esa oflayn uchun
+   * zaxira bo'lib qolaveradi. Narxi — bitta tarmoq murojaati; foydasi —
+   * ilovani buzadigan butun bir xatolar sinfi yo'qoladi.
+   */
+  if (request.destination === 'script' || request.destination === 'style') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  // Rasm, shrift, ikonka — ularda modullararo shartnoma yo'q, ya'ni
+  // eski nusxa hech narsani buzmaydi.
   event.respondWith(cacheFirst(request));
 });
 
@@ -108,9 +138,16 @@ const networkFirst = async request => {
     }
     return response;
   } catch {
-    const cached = (await matchCurrent(request)) ?? (await matchCurrent('/map.html'));
+    const cached = await matchCurrent(request);
     if (cached) return cached;
-    return new Response('Oflayn — bu sahifa hali keshlanmagan.', {
+
+    // Faqat SAHIFA so'ralganda makonni ko'rsatamiz. Kod so'ralganda
+    // HTML qaytarish xatoni yashirib, tushunarsiz qilib qo'yardi.
+    if (request.mode === 'navigate') {
+      const shell = await matchCurrent('/map.html');
+      if (shell) return shell;
+    }
+    return new Response('Oflayn — bu manba hali keshlanmagan.', {
       status: 503,
       headers: { 'content-type': 'text/plain; charset=utf-8' }
     });
