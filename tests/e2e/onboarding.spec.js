@@ -516,3 +516,51 @@ test.describe('Statistikani o‘chirish', () => {
     await expect(page.locator('#vaultMessage')).toContainText('yoqildi');
   });
 });
+
+/**
+ * Buzuq keshdan tiklanish qo'riqchisi.
+ *
+ * Oydin'da build bosqichi yo'q, ya'ni fayl nomlari o'zgarmaydi. Deploy
+ * paytida bitta modul eski keshdan, ikkinchisi tarmoqdan kelib qolishi
+ * mumkin — natijada import yiqiladi va BIRORTA tugma ishlamaydi.
+ * Takrorlab ko'rilgan xato:
+ *
+ *   The requested module '../core/app.js' does not provide an
+ *   export named 'setStatsEnabled'
+ *
+ * `recover.js` shu holatni sezib, eski nusxani tozalab, sahifani bir
+ * marta qayta yuklaydi. U ataylab modul EMAS va asosiy koddan OLDIN
+ * turadi — modul zanjiri yiqilganda ham tirik qolishi kerak.
+ */
+test.describe('Buzuq keshdan tiklanish', () => {
+  for (const path of ['/map.html', '/index.html']) {
+    test(`${path} — qo‘riqchi yuklanadi va modul emas`, async ({ page }) => {
+      await asReturning(page);
+      await page.goto(path, { waitUntil: 'domcontentloaded' });
+
+      // Skript teg tartibi muhim: qo'riqchi boot modulidan OLDIN.
+      const order = await page.evaluate(() => {
+        const src = [...document.querySelectorAll('script[src]')];
+        return {
+          qoriqchi: src.findIndex(s => s.src.includes('recover.js')),
+          boot: src.findIndex(s => s.src.includes('boot-')),
+          modulmi: src.find(s => s.src.includes('recover.js'))?.type ?? ''
+        };
+      });
+
+      expect(order.qoriqchi, 'qo‘riqchi sahifada yo‘q').toBeGreaterThanOrEqual(0);
+      expect(order.qoriqchi, 'qo‘riqchi boot dan keyin turibdi').toBeLessThan(order.boot);
+      expect(order.modulmi, 'qo‘riqchi modul bo‘lib qolgan').not.toBe('module');
+      expect(await page.evaluate(() => globalThis.__oydinRecover === true)).toBe(true);
+    });
+  }
+
+  test('sog‘lom sahifada HECH NARSA qilmaydi', async ({ page }) => {
+    await asReturning(page);
+    await page.goto('/map.html', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1500);
+
+    const tried = await page.evaluate(() => sessionStorage.getItem('oydin-recovered-v1'));
+    expect(tried, 'sog‘lom sahifada tiklanish ishga tushdi').toBeNull();
+  });
+});
