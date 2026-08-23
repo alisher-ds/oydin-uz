@@ -178,3 +178,58 @@ footer {
   font-size: 0.86rem;
   color: var(--muted);
 }
+
+/* ---- oldingi davrga nisbatan farq ---- */
+
+/*
+ * Yalang'och raqam hech narsani anglatmaydi — ma'no taqqoslashda.
+ * Rang faqat yordamchi: yo'nalish belgisi (+ yoki −) matnda ham bor,
+ * shuning uchun rangni ajratmaydiganlar ham o'qiy oladi.
+ */
+.tile i {
+  display: block;
+  margin-top: 0.2rem;
+  font: 600 0.78rem var(--font-mono);
+  font-style: normal;
+}
+.tile i.up {
+  color: #4f8a63;
+}
+.tile i.down {
+  color: #9f4c45;
+}
+.tile i.flat {
+  color: var(--muted);
+}
+
+/* ---- ikkinchi qator: yozilgan fikrlar ---- */
+
+.chart .line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: 0.75;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.legend .key {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.legend .line-key {
+  height: 0.15rem;
+  border-radius: 0;
+  background: var(--ink);
+  margin-left: 0.8rem;
+}

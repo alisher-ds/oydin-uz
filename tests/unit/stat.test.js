@@ -182,6 +182,26 @@ const sample = (total, byDay = {}) =>
   renderStatsPage({ days: 30, since: '2026-07-20', total, byDay });
 
 describe('renderStatsPage()', () => {
+  /**
+   * Yangi hodisa qo'shilib, unga nom berilmasa, jadvalda texnik nomi
+   * (`qollanma:boshlandi`) chiqib qoladi. Aynan shu bo'ldi ham.
+   */
+  it('HAR BIR hodisaning odam o‘qiydigan nomi bor', () => {
+    const html = renderStatsPage({
+      days: 30,
+      since: '2026-07-20',
+      total: Object.fromEntries(ALLOWED_EVENTS.map(name => [name, 1]))
+    });
+
+    const nomsiz = ALLOWED_EVENTS.filter(name => {
+      // Jadvalda "Nomi" ustuni texnik nomni ko'rsatadi — u har doim bor.
+      // Birinchi ustunda esa texnik nom TURMASLIGI kerak.
+      const row = html.match(new RegExp(`<tr><td>([^<]*)</td><td class="code">${name}<`));
+      return !row || row[1] === name;
+    });
+    assert.deepEqual(nomsiz, [], `nomsiz hodisalar: ${nomsiz.join(', ')}`);
+  });
+
   it('CSP buzadigan inline uslub ISHLATMAYDI', () => {
     const html = sample({ tashrif: 5, fikr: 2 }, { '2026-08-19': { tashrif: 5 } });
     assert.ok(!html.includes('<style'), '<style> bloki CSP tomonidan bloklanadi');
@@ -259,6 +279,52 @@ describe('renderStatsPage()', () => {
     });
     assert.ok(!html.includes('<img src=x'), 'xavfli belgilar ekranlanmadi');
     assert.match(html, /&lt;img/);
+  });
+
+  /**
+   * Yalang'och raqam ("47 tashrif") hech narsani anglatmaydi — u ko'p
+   * ham, kam ham emas. Ma'no faqat taqqoslashda tug'iladi.
+   */
+  describe('oldingi davrga nisbatan farq', () => {
+    const withPrevious = (total, previous) =>
+      renderStatsPage({ days: 30, since: '2026-07-20', total, previous });
+
+    it('o‘sishni ko‘rsatadi', () => {
+      const html = withPrevious({ tashrif: 120 }, { tashrif: 100 });
+      assert.match(html, /class="up">\+20 · 20%/);
+    });
+
+    it('kamayishni ham ko‘rsatadi', () => {
+      const html = withPrevious({ tashrif: 80 }, { tashrif: 100 });
+      assert.match(html, /class="down">−20 · 20%/);
+    });
+
+    it('o‘zgarmagani aniq aytiladi', () => {
+      assert.match(withPrevious({ tashrif: 50 }, { tashrif: 50 }), /o‘zgarmadi/);
+    });
+
+    /**
+     * Noldan o'sish har doim "+100%" bo'lib chiqadi va bu yolg'on
+     * ishonch beradi. Shuning uchun ko'rsatilmaydi.
+     */
+    it('oldingi davr BO‘SH bo‘lsa farq ko‘rsatmaydi', () => {
+      const html = withPrevious({ tashrif: 40 }, {});
+      assert.ok(!/class="up"/.test(html), 'noldan o‘sish foizi ko‘rsatildi');
+      assert.ok(!/class="down"/.test(html));
+    });
+
+    it('taqqoslash davri sarlavhada aytiladi', () => {
+      assert.match(withPrevious({ tashrif: 1 }, { tashrif: 1 }), /oldingi 30 kunga nisbatan/);
+    });
+  });
+
+  it('qaytish ulushini ham hisoblaydi', () => {
+    const html = renderStatsPage({
+      days: 30,
+      since: '2026-07-20',
+      total: { tashrif: 100, qaytish: 32, fikr: 10 }
+    });
+    assert.match(html, /<strong>32%<\/strong> — qaytib kelgan/);
   });
 
   it('sanani odam o‘qiydigan ko‘rinishda beradi', () => {

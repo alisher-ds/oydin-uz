@@ -440,3 +440,79 @@ test.describe('Kalitni boshqarish', () => {
     await expect(page.locator('#vaultMessage')).toContainText('qurilmadagi fikrlar qoladi');
   });
 });
+
+/**
+ * Statistikani o'chirish — TUGMA bilan.
+ *
+ * REGRESSIYA emas, kamchilik edi: "istagan payt o'chirishingiz mumkin"
+ * degan va'da amalda faqat konsolda bajarilardi
+ * (`localStorage.setItem('oydin-stat', 'off')`). Ya'ni u dasturchilar
+ * uchun edi, foydalanuvchilar uchun emas.
+ */
+test.describe('Statistikani o‘chirish', () => {
+  const openVault = async page => {
+    await page.goto('/map.html', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(700);
+    await page.locator('.sync-status').click();
+    await expect(page.locator('#vaultDialog')).toBeVisible();
+  };
+
+  test('sozlama tugmasi bor va holatni ko‘rsatadi', async ({ page }) => {
+    await asReturning(page);
+    await openVault(page);
+
+    const toggle = page.locator('#vaultDialog [data-stats]');
+    await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveText('Yoqilgan');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('bosilganda HAQIQATAN o‘chadi — so‘rov ketmay qoladi', async ({ page }) => {
+    /*
+     * Statistika lokal manzilda o'chiq, shuning uchun ataylab yoqamiz —
+     * lekin FAQAT BIR MARTA. `addInitScript` har navigatsiyada ishlaydi,
+     * ya'ni belgisiz u `reload()` dan keyin bizning "o'chirdik" ni
+     * qayta yoqib yuborardi va test hech qachon o'tmasdi.
+     */
+    await page.addInitScript(() => {
+      const MARKER = '__oydin_stat_seeded';
+      if (localStorage.getItem(MARKER)) return;
+      localStorage.setItem('oydin-stat', 'on');
+      localStorage.setItem(MARKER, '1');
+    });
+    await asReturning(page);
+
+    const sent = [];
+    page.on('request', request => {
+      if (request.url().includes('/api/stat')) sent.push(1);
+    });
+
+    await openVault(page);
+    await page.locator('#vaultDialog [data-stats]').click();
+    await expect(page.locator('#vaultDialog [data-stats]')).toHaveText('O‘chiq');
+    await expect(page.locator('#vaultMessage')).toContainText('o‘chirildi');
+
+    // Yangi sahifada endi hech narsa yubormasligi kerak.
+    sent.length = 0;
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1500);
+    expect(sent, 'o‘chirilgandan keyin ham so‘rov ketdi').toEqual([]);
+  });
+
+  test('qayta yoqish ham ishlaydi', async ({ page }) => {
+    await page.addInitScript(() => {
+      const MARKER = '__oydin_stat_seeded';
+      if (localStorage.getItem(MARKER)) return;
+      localStorage.setItem('oydin-stat', 'off');
+      localStorage.setItem(MARKER, '1');
+    });
+    await asReturning(page);
+    await openVault(page);
+
+    const toggle = page.locator('#vaultDialog [data-stats]');
+    await expect(toggle).toHaveText('O‘chiq');
+    await toggle.click();
+    await expect(toggle).toHaveText('Yoqilgan');
+    await expect(page.locator('#vaultMessage')).toContainText('yoqildi');
+  });
+});
