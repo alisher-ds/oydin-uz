@@ -8,6 +8,7 @@
  */
 
 import { $, EVENTS, el, escapeHtml } from '../core/index.js';
+import { setStatsEnabled, statsOptedOut } from '../core/app.js';
 import {
   enableSync,
   forgetToken,
@@ -93,6 +94,20 @@ function openVaultDialog() {
       </label>
       <p class="vault-message" id="vaultMessage" role="status"></p>
 
+      <!-- Maxfiylik sozlamasi ataylab shu yerda: bu oyna ikkala sahifadan
+           ham ochiladi va allaqachon "nima qurilmada, nima serverda"
+           degan savolga javob beradi. -->
+      <div class="vault-privacy">
+        <div>
+          <b>Anonim statistika</b>
+          <span>
+            Faqat hodisa nomi yuboriladi (masalan <code>fikr</code>). Matn, IP,
+            cookie — hech qachon.
+          </span>
+        </div>
+        <button type="button" class="soft-button" data-stats></button>
+      </div>
+
       ${
         token
           ? `<div class="vault-manage">
@@ -116,6 +131,27 @@ function openVaultDialog() {
     message.textContent = text;
     message.dataset.tone = tone;
   };
+
+  /** Statistika tugmasini joriy holatga moslaydi. */
+  const paintStats = () => {
+    const button = dialog.querySelector('[data-stats]');
+    if (!button) return;
+    const off = statsOptedOut();
+    button.textContent = off ? 'O‘chiq' : 'Yoqilgan';
+    button.setAttribute('aria-pressed', String(!off));
+    button.dataset.on = String(!off);
+  };
+  paintStats();
+
+  dialog.querySelector('[data-stats]')?.addEventListener('click', () => {
+    setStatsEnabled(statsOptedOut());
+    paintStats();
+    say(
+      statsOptedOut()
+        ? 'Statistika o‘chirildi. Bu qurilmadan boshqa hech narsa yuborilmaydi.'
+        : 'Statistika yoqildi. Faqat hodisa nomlari — matnsiz.'
+    );
+  });
 
   dialog.querySelector('[data-close]').addEventListener('click', () => {
     dialog.close();

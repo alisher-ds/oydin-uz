@@ -76,6 +76,41 @@ export function decide({ flag, dnt, hostname } = {}) {
   return !localHosts.has(hostname ?? ''); // lokal ishlab chiqish sanalmasin
 }
 
+/**
+ * Foydalanuvchi statistikani ATAYLAB o'chirganmi.
+ *
+ * `isEnabled()` dan farqi bor: u "hozir yig'ilyaptimi" degan savolga
+ * javob beradi va lokal manzil, Do Not Track kabi sabablarni ham
+ * hisobga oladi. Bu esa faqat foydalanuvchining o'z tanlovini aytadi —
+ * sozlama tugmasi aynan shuni ko'rsatishi kerak.
+ */
+export function statsOptedOut() {
+  try {
+    return globalThis.localStorage?.getItem(OPT_OUT_KEY) === 'off';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Statistikani yoqadi yoki o'chiradi.
+ *
+ * Ilgari buni faqat konsolda `localStorage.setItem(...)` bilan qilish
+ * mumkin edi — ya'ni "istagan payt o'chirishingiz mumkin" degan va'da
+ * amalda dasturchilar uchun edi. Endi u tugma.
+ *
+ * @param {boolean} on
+ */
+export function setStatsEnabled(on) {
+  try {
+    if (on) globalThis.localStorage?.removeItem(OPT_OUT_KEY);
+    else globalThis.localStorage?.setItem(OPT_OUT_KEY, 'off');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Statistika yig'ilishi kerakmi. */
 export function isEnabled() {
   if (typeof globalThis.navigator === 'undefined') return false;

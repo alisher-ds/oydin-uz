@@ -153,7 +153,19 @@ export async function onRequestGet({ request, env }) {
   if (!safeEqual(token, expected)) return json({ error: 'not_found' }, 404);
 
   const days = Math.min(Math.max(Number(url.searchParams.get('days')) || 30, 1), 365);
-  const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const dayMs = 86_400_000;
+  const asDay = ms => new Date(ms).toISOString().slice(0, 10);
+  const since = asDay(Date.now() - days * dayMs);
+
+  /*
+   * IKKI BARAVAR uzoq davr o'qiladi.
+   *
+   * Yalang'och raqam ("47 tashrif") hech narsani anglatmaydi — u ko'p
+   * ham, kam ham emas. Ma'no faqat taqqoslashda: o'tgan shuncha kunga
+   * nisbatan ko'paydimi yoki kamaydimi. Shuning uchun oldingi davr ham
+   * o'qilib, farq hisoblanadi.
+   */
+  const sincePrevious = asDay(Date.now() - days * 2 * dayMs);
 
   try {
     if (!env.OYDIN_DB) return json({ error: 'unavailable' }, 503);
@@ -162,20 +174,26 @@ export async function onRequestGet({ request, env }) {
     const { results = [] } = await env.OYDIN_DB.prepare(
       'SELECT day, event, hits FROM stats WHERE day >= ? ORDER BY day DESC, event ASC'
     )
-      .bind(since)
+      .bind(sincePrevious)
       .all();
 
     const byDay = {};
     const total = {};
+    const previous = {};
     for (const row of results) {
-      (byDay[row.day] ??= {})[row.event] = Number(row.hits);
-      total[row.event] = (total[row.event] ?? 0) + Number(row.hits);
+      const hits = Number(row.hits);
+      if (row.day >= since) {
+        (byDay[row.day] ??= {})[row.event] = hits;
+        total[row.event] = (total[row.event] ?? 0) + hits;
+      } else {
+        previous[row.event] = (previous[row.event] ?? 0) + hits;
+      }
     }
 
     // Brauzer HTML so'raydi, `curl` va skriptlar — yo'q.
     const wantsHtml = (request.headers.get('accept') || '').includes('text/html');
     if (wantsHtml) {
-      return new Response(renderStatsPage({ days, since, total, byDay }), {
+      return new Response(renderStatsPage({ days, since, total, previous, byDay }), {
         headers: {
           'content-type': 'text/html; charset=utf-8',
           'cache-control': 'no-store',
@@ -185,7 +203,7 @@ export async function onRequestGet({ request, env }) {
       });
     }
 
-    return json({ since, days, jami: total, kunlar: byDay });
+    return json({ since, days, jami: total, oldingi: previous, kunlar: byDay });
   } catch (error) {
     console.error('Statistika o‘qilmadi:', error);
     return json({ error: 'unavailable' }, 503);

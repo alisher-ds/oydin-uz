@@ -220,11 +220,9 @@ boʻladigan hech narsaga muhtoj emas.
 Bularning hammasi `tests/e2e/stat.spec.js` da tarmoq darajasida
 tekshiriladi — kod emas, sahifa **aslida nima yuborayotgani** oʻqiladi.
 
-**Oʻchirish:**
-
-```js
-localStorage.setItem('oydin-stat', 'off'); // butunlay toʻxtaydi
-```
+**Oʻchirish** — sinxronizatsiya koʻrsatkichini bosing, oynadagi
+**Anonim statistika** qatoridan **Yoqilgan / Oʻchiq** tugmasini
+almashtiring. Oʻchirilgach bu qurilmadan birorta ham soʻrov ketmaydi.
 
 Brauzerning "Do Not Track" sozlamasi ham hurmat qilinadi. Lokal
 ishlab chiqishda statistika oʻzi oʻchiq (`localhost`).
@@ -237,6 +235,12 @@ ya'ni endpoint borligi oshkor boʻlmaydi:
 npx wrangler pages secret put STATS_TOKEN
 npx wrangler pages secret put IP_SALT     # rate limiting izlari uchun
 ```
+
+Sahifa **oldingi davr bilan taqqoslab** koʻrsatadi: har bir raqam
+yonida oʻtgan shuncha kunga nisbatan farq turadi, chunki yalangʻoch
+son ("47 tashrif") oʻzi hech narsani anglatmaydi. Diagrammada tashrif
+ustunlari ustidan yozilgan fikrlar chizigʻi oʻtadi — tashrif koʻpaysa
+yozuv ham koʻpayganini shu yerda koʻrasiz.
 
 Bitta manzil ikki xil javob beradi — brauzer HTML soʻraydi, `curl` yoʻq:
 

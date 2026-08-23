@@ -979,3 +979,51 @@ dialog::backdrop {
 .ai-status[data-tone='pending'] {
   color: var(--muted);
 }
+
+/*
+ * Maxfiylik sozlamasi kalit oynasida.
+ *
+ * Ilgari statistikani faqat konsolda o'chirish mumkin edi — ya'ni
+ * "istagan payt o'chirasiz" degan va'da amalda dasturchilar uchun edi.
+ */
+.vault-privacy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 20px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.vault-privacy b {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+}
+.vault-privacy span {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.vault-privacy code {
+  font: 500 10px var(--font-mono);
+}
+.vault-privacy button {
+  flex: none;
+  min-width: 6.5rem;
+}
+.vault-privacy button[data-on='true'] {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  color: var(--ink);
+}
+
+@media (max-width: 650px) {
+  .vault-privacy {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

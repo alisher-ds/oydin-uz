@@ -30,7 +30,10 @@ const LABELS = Object.freeze({
   'recall:korsatildi': 'Eski fikr ko‘rsatildi',
   'recall:qabul': 'Eski fikr qabul qilindi',
   'recall:yopildi': 'Eski fikr yopildi',
-  ai: 'AI suhbat'
+  ai: 'AI suhbat',
+  'qollanma:boshlandi': 'Qo‘llanma ochildi',
+  'qollanma:tugadi': 'Qo‘llanma oxirigacha',
+  'qollanma:otkazildi': 'Qo‘llanma tashlab ketildi'
 });
 
 const escape = value =>
@@ -58,7 +61,9 @@ function chart(points) {
   const W = 720;
   const H = 180;
   const PAD = 10;
-  const max = Math.max(...points.map(p => p.value), 1);
+  // Ikkala qator ham bir xil o'lchovda — aks holda taqqoslash yolg'on
+  // bo'ladi: kichik son katta ko'rinib qolardi.
+  const max = Math.max(...points.map(p => Math.max(p.value, p.wrote)), 1);
   const slot = (W - PAD * 2) / points.length;
   const barWidth = Math.max(2, Math.min(slot - 3, 34));
 
@@ -70,10 +75,26 @@ function chart(points) {
       return (
         `<rect class="bar" x="${x.toFixed(1)}" y="${y}" width="${barWidth.toFixed(1)}" ` +
         `height="${Math.max(height, 1)}" rx="2"><title>${escape(shortDate(point.day))}: ` +
-        `${point.value}</title></rect>`
+        `${point.value} tashrif · ${point.wrote} yozuv</title></rect>`
       );
     })
     .join('');
+
+  /*
+   * Ikkinchi qator — yozilgan fikrlar — CHIZIQ bo'lib ustidan o'tadi.
+   *
+   * Ustunlar yonma-yon qo'yilsa 30 kunda ular ikki pikselgacha
+   * torayadi. Chiziq esa qancha kun bo'lsa ham o'qiladi va asosiy
+   * savolga javob beradi: tashrif ko'paysa, yozuv ham ko'paydimi?
+   */
+  const line = points
+    .map((point, index) => {
+      const x = PAD + index * slot + slot / 2;
+      const y = H - PAD - Math.round((point.wrote / max) * (H - PAD * 2));
+      return `${x.toFixed(1)},${y}`;
+    })
+    .join(' ');
+  const wroteLine = points.length > 1 ? `<polyline class="line" points="${escape(line)}" />` : '';
 
   // Sanalar SVG ichida EMAS: `viewBox` telefonda ~0.5 ga kichrayadi va
   // matn o'qib bo'lmas holga keladi. HTML da esa u har doim o'z o'lchamida.
@@ -84,11 +105,17 @@ function chart(points) {
       ? `<p class="axis"><span>${first}</span><span>${last}</span></p>`
       : `<p class="axis"><span>${first}</span></p>`;
 
+  const legend =
+    '<p class="legend">' +
+    '<span class="key bar-key"></span>tashrif' +
+    '<span class="key line-key"></span>yozilgan fikr' +
+    '</p>';
+
   return (
     `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" ` +
-    `aria-label="Kunlik tashriflar diagrammasi">` +
+    `aria-label="Kunlik tashrif va yozilgan fikrlar diagrammasi">` +
     `<line class="grid" x1="${PAD}" y1="${H - PAD}" x2="${W - PAD}" y2="${H - PAD}" />` +
-    `${bars}</svg>${axis}`
+    `${bars}${wroteLine}</svg>${axis}${legend}`
   );
 }
 
@@ -99,35 +126,64 @@ function chart(points) {
  * @param {Record<string, number>} input.total hodisa → jami son
  * @param {Record<string, Record<string, number>>} input.byDay kun → hodisalar
  */
-export function renderStatsPage({ days, since, total = {}, byDay = {} }) {
+export function renderStatsPage({ days, since, total = {}, previous = {}, byDay = {} }) {
   const get = key => Number(total[key] ?? 0);
+  const was = key => Number(previous[key] ?? 0);
   const tashrif = get('tashrif');
   const yozgan = get('fikr') + get('tez');
 
+  /**
+   * Oldingi davrga nisbatan farq.
+   *
+   * Yalang'och raqam ("47 tashrif") hech narsani anglatmaydi — u ko'p
+   * ham, kam ham emas. Ma'no faqat taqqoslashda tug'iladi.
+   *
+   * Oldingi davrda umuman ma'lumot bo'lmasa, farq KO'RSATILMAYDI:
+   * noldan o'sish har doim "+100%" bo'lib chiqadi va bu yolg'on
+   * ishonch beradi.
+   */
+  const delta = key => {
+    const before = was(key);
+    const nowValue = get(key);
+    if (!before) return '';
+    const diff = nowValue - before;
+    if (diff === 0) return '<i class="flat">o‘zgarmadi</i>';
+    const sign = diff > 0 ? '+' : '−';
+    const percent = Math.round((Math.abs(diff) / before) * 100);
+    return `<i class="${diff > 0 ? 'up' : 'down'}">${sign}${Math.abs(diff)} · ${percent}%</i>`;
+  };
+
   const tiles = [
-    ['Tashrif', tashrif, 'noyob, kuniga bir marta'],
-    ['Qaytgan', get('qaytish'), 'ilgari ham kirgan'],
-    ['Fikr yozildi', get('fikr'), 'makonda karta'],
-    ['Tez yozish', get('tez'), 'panel orqali']
+    ['Tashrif', tashrif, 'noyob, kuniga bir marta', 'tashrif'],
+    ['Qaytgan', get('qaytish'), 'ilgari ham kirgan', 'qaytish'],
+    ['Fikr yozildi', get('fikr'), 'makonda karta', 'fikr'],
+    ['Tez yozish', get('tez'), 'panel orqali', 'tez']
   ]
     .map(
-      ([label, value, hint]) =>
-        `<div class="tile"><b>${value}</b><span>${escape(label)}</span>` +
-        `<span>${escape(hint)}</span></div>`
+      ([label, value, hint, key]) =>
+        `<div class="tile"><b>${value}</b>${delta(key)}` +
+        `<span>${escape(label)}</span><span>${escape(hint)}</span></div>`
     )
     .join('');
 
   // Eng muhim raqam: kirgan odamlarning qanchasi ISH qilgan.
   const ulush = tashrif ? Math.round((yozgan / tashrif) * 100) : 0;
+  const qaytish = tashrif ? Math.round((get('qaytish') / tashrif) * 100) : 0;
   const note = tashrif
     ? `<p class="note"><strong>${ulush}%</strong> — kirganlarning shuncha qismi ` +
       `hech bo‘lmasa bitta fikr yozgan (${yozgan} / ${tashrif}). ` +
-      `Bu raqam past bo‘lsa muammo reklama emas, birinchi ekranda.</p>`
+      `Bu raqam past bo‘lsa muammo reklama emas, birinchi ekranda.<br />` +
+      `<strong>${qaytish}%</strong> — qaytib kelgan. Bu mahsulot ESLAB QOLINGANINI ` +
+      `ko‘rsatadi: bir marta kirib ketish oson, qaytish qiyin.</p>`
     : '';
 
   const points = Object.keys(byDay)
     .sort()
-    .map(day => ({ day, value: Number(byDay[day]?.tashrif ?? 0) }));
+    .map(day => ({
+      day,
+      value: Number(byDay[day]?.tashrif ?? 0),
+      wrote: Number(byDay[day]?.fikr ?? 0) + Number(byDay[day]?.tez ?? 0)
+    }));
 
   const rows = Object.entries(total)
     .sort((a, b) => b[1] - a[1])
@@ -141,7 +197,7 @@ export function renderStatsPage({ days, since, total = {}, byDay = {} }) {
 
   const body = Object.keys(total).length
     ? `<h2>Umumiy</h2><div class="tiles">${tiles}</div>${note}` +
-      `<h2>Kunlik tashrif</h2>${chart(points)}` +
+      `<h2>Kunlik harakat</h2>${chart(points)}` +
       `<h2>Barcha hodisalar</h2><div class="scroll"><table>` +
       `<thead><tr><th>Hodisa</th><th>Nomi</th><th class="num">Soni</th></tr></thead>` +
       `<tbody>${rows}</tbody></table></div>`
@@ -170,7 +226,10 @@ export function renderStatsPage({ days, since, total = {}, byDay = {} }) {
     <div class="wrap">
       <header>
         <h1>Oydin</h1>
-        <p class="sub">Statistika · so‘nggi ${Number(days)} kun — ${escape(shortDate(since))}dan buyon</p>
+        <p class="sub">
+          Statistika · so‘nggi ${Number(days)} kun — ${escape(shortDate(since))}dan buyon.
+          Farqlar oldingi ${Number(days)} kunga nisbatan.
+        </p>
       </header>
       ${body}
       <footer>
