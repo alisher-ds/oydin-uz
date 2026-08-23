@@ -1,14 +1,17 @@
 /**
  * Oydin service worker.
  *
- * Maqsad — tezlik. Makon keshdan ochilsa, foydalanuvchi tarmoqni umuman
- * kutmaydi: ikonkani bosdi — sahifa turibdi.
+ * Maqsad — tezlik va yangilikni birga ushlash.
  *
  * Strategiya ikki xil:
  *  - navigatsiya (HTML): avval tarmoq, u ishlamasa kesh. Shunda yangi
  *    versiya darhol ko'rinadi, lekin oflayn ham ochiladi.
- *  - qolgan fayllar (CSS/JS/rasm): avval kesh, keyin fonda yangilanadi.
- *    Bu "stale-while-revalidate": sahifa kutmaydi, lekin eskirib qolmaydi.
+ *  - kod (JS/CSS): avval tarmoq, u ishlamasa joriy deploy keshidan oladi.
+ *    Build bosqichi yo'q va fayl nomlari o'zgarmaydi, shuning uchun kodni
+ *    stale-while-revalidate qilish turli deploy avlodlarini aralashtirib,
+ *    ES modul zanjirini sindirishi mumkin.
+ *  - qolgan statik fayllar (rasm, shrift, ikonka): avval kesh, keyin fonda
+ *    yangilanadi. Ular modullararo shartnomaga ega emas.
  *
  * API so'rovlari (`/api/...`) HECH QACHON keshlanmaydi — ular jonli
  * ma'lumot va eski javob zarar keltiradi.
@@ -50,7 +53,7 @@ const PRECACHE = [
  *
  * Endi ro'yxat o'zgarsa kesh nomi ham o'zi o'zgaradi, ya'ni eski nusxa
  * `activate` da avtomatik o'chadi. Faylning ICHI o'zgarganda esa
- * "keshdan ber, fonda yangila" strategiyasi ishlaydi.
+ * network-first strategiyasi kodni imkon qadar darhol yangilaydi.
  */
 const fingerprint = list => {
   let hash = 5381;
@@ -128,7 +131,7 @@ self.addEventListener('fetch', event => {
   event.respondWith(cacheFirst(request));
 });
 
-/** HTML: yangi versiya muhim, lekin oflayn ham ochilsin. */
+/** HTML va kod: yangi versiya muhim, lekin oflayn ham ochilsin. */
 const networkFirst = async request => {
   try {
     const response = await fetch(request);
